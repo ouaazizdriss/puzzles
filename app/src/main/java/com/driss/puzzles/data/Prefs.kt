@@ -16,6 +16,14 @@ class Prefs(context: Context) {
         get() = prefs.getInt("last_target", PuzzleGrid.DEFAULT_TARGET)
         set(value) = prefs.edit { putInt("last_target", value) }
 
+    var lastKidsTarget: Int
+        get() = prefs.getInt("last_kids_target", PuzzleGrid.DEFAULT_KIDS_TARGET)
+        set(value) = prefs.edit { putInt("last_kids_target", value) }
+
+    var soundOn: Boolean
+        get() = prefs.getBoolean("sound_on", true)
+        set(value) = prefs.edit { putBoolean("sound_on", value) }
+
     fun bestTime(imageId: String, pieces: Int): Long? =
         prefs.getLong(bestKey(imageId, pieces), -1L).takeIf { it >= 0 }
 

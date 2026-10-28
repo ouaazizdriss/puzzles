@@ -11,7 +11,14 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 @Serializable
-data class SavedPiece(val x: Float, val y: Float, val inTray: Boolean, val placed: Boolean)
+data class SavedPiece(
+    val x: Float,
+    val y: Float,
+    val inTray: Boolean,
+    val placed: Boolean,
+    /** Id of the group the piece is joined to; -1 in saves from 1.0. */
+    val group: Int = -1,
+)
 
 /** A game in progress. Piece positions are in world units of a [width] x [height] source bitmap. */
 @Serializable

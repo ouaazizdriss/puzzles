@@ -25,7 +25,19 @@ private class AndroidPathSink(val path: Path) : PathSink {
     override fun close() = path.close()
 }
 
+private class ComposePathSink(val path: androidx.compose.ui.graphics.Path) : PathSink {
+    override fun moveTo(x: Float, y: Float) = path.moveTo(x, y)
+    override fun lineTo(x: Float, y: Float) = path.lineTo(x, y)
+    override fun cubicTo(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float) =
+        path.cubicTo(x1, y1, x2, y2, x3, y3)
+    override fun close() = path.close()
+}
+
 object PieceRenderer {
+
+    /** Outline of every piece at its home position, in world coordinates. */
+    fun outlines(cut: PuzzleCut): List<androidx.compose.ui.graphics.Path> =
+        List(cut.count) { id -> androidx.compose.ui.graphics.Path().also { cut.outline(id, ComposePathSink(it)) } }
 
     fun render(source: Bitmap, cut: PuzzleCut): List<PieceSprite> {
         val fill = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {

@@ -64,9 +64,14 @@ fun SetupScreen(imageId: String, onBack: () -> Unit, onPlay: (id: String, target
         return
     }
     val saves by container.saves.summaries.collectAsStateWithLifecycle()
-    var target by rememberSaveable { mutableIntStateOf(container.prefs.lastTarget) }
+    val options = if (image.isKids) PuzzleGrid.KIDS_OPTIONS else PuzzleGrid.PIECE_OPTIONS
+    var target by rememberSaveable {
+        mutableIntStateOf((if (image.isKids) container.prefs.lastKidsTarget else container.prefs.lastTarget).takeIf { it in options } ?: options[options.size / 2])
+    }
     val play = { resume: Boolean ->
-        if (!resume) container.prefs.lastTarget = target
+        if (!resume) {
+            if (image.isKids) container.prefs.lastKidsTarget = target else container.prefs.lastTarget = target
+        }
         onPlay(imageId, target, resume)
     }
 
@@ -137,14 +142,15 @@ private fun Options(
     Text("Pieces", style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        PuzzleGrid.PIECE_OPTIONS.forEach { option ->
+        (if (image.isKids) PuzzleGrid.KIDS_OPTIONS else PuzzleGrid.PIECE_OPTIONS).forEach { option ->
             val count = PuzzleGrid.forTarget(image.width, image.height, option).count
             FilterChip(selected = option == target, onClick = { onTarget(option) }, label = { Text("$count") })
         }
     }
     Spacer(Modifier.height(4.dp))
     Text(
-        "${grid.cols} × ${grid.rows} grid · " + (best?.let { "Best time ${formatDuration(it)}" } ?: "No best time yet"),
+        if (image.isKids) "Big pieces that snap in easily"
+        else "${grid.cols} × ${grid.rows} grid · " + (best?.let { "Best time ${formatDuration(it)}" } ?: "No best time yet"),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

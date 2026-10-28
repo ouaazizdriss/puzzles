@@ -13,7 +13,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Camera, tray scroll and the piece being dragged. Screen coordinates are pixels of the board canvas;
+ * Camera, tray scroll and the group being dragged. Screen coordinates are pixels of the board canvas;
  * world coordinates are pixels of the puzzle image, with the puzzle frame at (0, 0)-(width, height).
  */
 @Stable
@@ -24,13 +24,22 @@ class BoardState(private val vm: GameViewModel, private val density: Float) {
         private set
     var trayScroll by mutableFloatStateOf(0f)
         private set
+    /** The piece under the finger, or -1. */
     var dragId by mutableIntStateOf(-1)
         private set
-    /** World position of the dragged piece's cell origin. */
-    var dragPos by mutableStateOf(Offset.Zero)
+    /** Every piece moving with [dragId] (its joined group). */
+    var dragMembers by mutableStateOf<Set<Int>>(emptySet())
         private set
-    /** Finger is over the tray while dragging: the piece will go back into it. */
+    /** World offset of the dragged group from where the drag started. */
+    var dragDelta by mutableStateOf(Offset.Zero)
+        private set
+    /** Finger is over the tray while dragging a single piece: it will go back into the tray. */
     var overTray by mutableStateOf(false)
+        private set
+    /** Pieces that just locked into place, for a short flash; [flashKey] changes on every snap. */
+    var flashIds by mutableStateOf<List<Int>>(emptyList())
+        private set
+    var flashKey by mutableIntStateOf(0)
         private set
 
     var size by mutableStateOf(IntSize.Zero)
@@ -40,7 +49,7 @@ class BoardState(private val vm: GameViewModel, private val density: Float) {
     var trayThickness by mutableFloatStateOf(0f)
         private set
 
-    private var grab = Offset.Zero
+    private var dragStart = Offset.Zero
 
     val trayRect: Rect
         get() = if (trayAtSide) Rect(size.width - trayThickness, 0f, size.width.toFloat(), size.height.toFloat())
@@ -104,40 +113,73 @@ class BoardState(private val vm: GameViewModel, private val density: Float) {
     }
 
     fun beginDrag(id: Int, p: Offset) {
-        val piece = vm.pieces[id]
-        grab = Offset(piece.x, piece.y) - toWorld(p)
-        dragPos = Offset(piece.x, piece.y)
+        val members = vm.groupOf(id)
+        vm.bringToFront(members)
+        dragStart = toWorld(p)
+        dragDelta = Offset.Zero
+        dragMembers = members.toSet()
         dragId = id
-        vm.bringToFront(id)
     }
 
     fun beginDragFromTray(id: Int, p: Offset) {
         val cut = vm.cut ?: return
-        grab = Offset(-cut.cellW / 2, -cut.cellH / 2)
-        dragPos = toWorld(p) + grab
-        vm.takeFromTray(id, dragPos.x, dragPos.y)
+        val w = toWorld(p)
+        vm.takeFromTray(id, w.x - cut.cellW / 2, w.y - cut.cellH / 2)
+        dragStart = w
+        dragDelta = Offset.Zero
+        dragMembers = setOf(id)
         dragId = id
         clampTray()
     }
 
-    fun dragTo(p: Offset) {
-        dragPos = toWorld(p) + grab
-        overTray = trayRect.contains(p)
+    private fun snapTolerance(): Float {
+        val cut = vm.cut ?: return 0f
+        return if (vm.kids) max(cut.unit * 0.45f, 32f * density / scale)
+        else max(cut.unit * 0.22f, 20f * density / scale)
     }
 
-    /** Ends a drag with the finger at [p]. Returns true if the piece snapped into place. */
-    fun endDrag(p: Offset): Boolean {
-        val id = dragId
-        val cut = vm.cut
-        dragId = -1
-        overTray = false
-        if (id < 0 || cut == null) return false
-        if (trayRect.contains(p)) {
-            vm.returnToTray(id, trayInsertIndex(p))
-            return false
+    /**
+     * Follows the finger. In kids mode the piece drops itself as soon as it is close to home, so a
+     * child does not have to let go at exactly the right spot; returns [DropResult.Placed] then.
+     */
+    fun dragTo(p: Offset): DropResult? {
+        val cut = vm.cut ?: return null
+        dragDelta = toWorld(p) - dragStart
+        overTray = trayRect.contains(p) && dragMembers.size == 1
+        if (vm.kids && dragId >= 0) {
+            val piece = vm.pieces[dragId]
+            if (cut.isNearHome(dragId, piece.x + dragDelta.x, piece.y + dragDelta.y, snapTolerance())) {
+                return finish(vm.dropGroup(dragId, dragDelta.x, dragDelta.y, snapTolerance()))
+            }
         }
-        val tolerance = max(cut.unit * 0.22f, 20f * density / scale)
-        return vm.drop(id, dragPos.x, dragPos.y, tolerance)
+        return null
+    }
+
+    /** Ends a drag with the finger at [p]. */
+    fun endDrag(p: Offset): DropResult {
+        val id = dragId
+        if (id < 0 || vm.cut == null) return finish(DropResult.None)
+        if (trayRect.contains(p) && dragMembers.size == 1) {
+            vm.returnToTray(id, trayInsertIndex(p))
+            return finish(DropResult.None)
+        }
+        val result = vm.dropGroup(id, dragDelta.x, dragDelta.y, snapTolerance())
+        // Young children lose track of pieces left on the table: anything not placed goes back.
+        if (vm.kids && result != DropResult.Placed) vm.returnToTray(id, 0)
+        return finish(result)
+    }
+
+    private fun finish(result: DropResult): DropResult {
+        if (result == DropResult.Placed) {
+            flashIds = dragMembers.toList()
+            flashKey++
+        }
+        dragId = -1
+        dragMembers = emptySet()
+        dragDelta = Offset.Zero
+        overTray = false
+        clampTray()
+        return result
     }
 
     fun pan(delta: Offset) {
@@ -154,6 +196,14 @@ class BoardState(private val vm: GameViewModel, private val density: Float) {
 
     fun scrollTray(delta: Float) {
         trayScroll += delta
+        clampTray()
+    }
+
+    /** Scrolls the tray so piece [id] is in the middle, if it is in the tray. */
+    fun scrollTrayTo(id: Int) {
+        val index = vm.trayItems().indexOf(id)
+        if (index < 0) return
+        trayScroll = index * slot - trayLength / 2 + slot / 2
         clampTray()
     }
 

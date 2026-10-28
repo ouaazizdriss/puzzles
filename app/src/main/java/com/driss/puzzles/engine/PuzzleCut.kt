@@ -59,6 +59,29 @@ class PuzzleCut(
     fun col(id: Int) = id % cols
     fun homeX(id: Int) = col(id) * cellW
     fun homeY(id: Int) = row(id) * cellH
+    /** Ids of the pieces directly above, below, left and right of [id]. */
+    fun neighbours(id: Int): List<Int> {
+        val r = row(id)
+        val c = col(id)
+        return buildList {
+            if (r > 0) add(id - cols)
+            if (r < rows - 1) add(id + cols)
+            if (c > 0) add(id - 1)
+            if (c < cols - 1) add(id + 1)
+        }
+    }
+
+    /** Corners first, then other border pieces, then the rest. */
+    fun edgeRank(id: Int): Int {
+        val vertical = row(id) == 0 || row(id) == rows - 1
+        val horizontal = col(id) == 0 || col(id) == cols - 1
+        return when {
+            vertical && horizontal -> 0
+            vertical || horizontal -> 1
+            else -> 2
+        }
+    }
+
     fun isBorder(id: Int) = row(id) == 0 || col(id) == 0 || row(id) == rows - 1 || col(id) == cols - 1
 
     /** True when a piece whose cell origin is at ([x], [y]) is close enough to snap home. */

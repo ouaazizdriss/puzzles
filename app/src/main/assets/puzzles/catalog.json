@@ -1,5 +1,140 @@
 [
  {
+  "id": "kids_shapes",
+  "title": "Shapes",
+  "category": "kids",
+  "file": "k_shapes.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_numbers",
+  "title": "Numbers",
+  "category": "kids",
+  "file": "k_numbers.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_abc",
+  "title": "ABC",
+  "category": "kids",
+  "file": "k_abc.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_colors",
+  "title": "Colors",
+  "category": "kids",
+  "file": "k_colors.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_fruits",
+  "title": "Fruit",
+  "category": "kids",
+  "file": "k_fruits.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_rainbow",
+  "title": "Rainbow",
+  "category": "kids",
+  "file": "k_rainbow.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_house",
+  "title": "Little house",
+  "category": "kids",
+  "file": "k_house.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_sea",
+  "title": "Under the sea",
+  "category": "kids",
+  "file": "k_sea.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_space",
+  "title": "Space trip",
+  "category": "kids",
+  "file": "k_space.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_vehicles",
+  "title": "Car and bus",
+  "category": "kids",
+  "file": "k_vehicles.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null
+ },
+ {
+  "id": "kids_1003",
+  "title": "Baby deer",
+  "category": "kids",
+  "file": "k1003.webp",
+  "width": 1067,
+  "height": 1600,
+  "author": "E+N Photographies"
+ },
+ {
+  "id": "kids_169",
+  "title": "Puppies",
+  "category": "kids",
+  "file": "k169.webp",
+  "width": 1600,
+  "height": 1064,
+  "author": "Noel Lopez"
+ },
+ {
+  "id": "kids_1062",
+  "title": "Sleepy pug",
+  "category": "kids",
+  "file": "k1062.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Matthew Wiebe"
+ },
+ {
+  "id": "kids_200",
+  "title": "Fluffy cow",
+  "category": "kids",
+  "file": "k200.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Elias Carlsson"
+ },
+ {
+  "id": "kids_102",
+  "title": "Raspberries",
+  "category": "kids",
+  "file": "k102.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Ben Moore"
+ },
+ {
   "id": "builtin_1025",
   "title": "Cozy pug",
   "category": "animals",

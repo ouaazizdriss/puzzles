@@ -25,6 +25,13 @@ class PuzzleGridTest {
     }
 
     @Test
+    fun kidsOptionsGiveTinyGrids() {
+        assertEquals(4, PuzzleGrid.forTarget(1600, 1200, 4).count)
+        assertEquals(6, PuzzleGrid.forTarget(1600, 1200, 6).count)
+        assertEquals(12, PuzzleGrid.forTarget(1600, 1200, 12).count)
+    }
+
+    @Test
     fun countsStayCloseToTarget() {
         for (target in PuzzleGrid.PIECE_OPTIONS) {
             for ((w, h) in listOf(1600 to 1067, 1067 to 1600, 1600 to 900, 1000 to 1000)) {

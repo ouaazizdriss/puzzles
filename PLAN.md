@@ -39,9 +39,17 @@ Everything runs offline, with no backend and no account.
 - **Completion**: animation, time taken, best time saved per puzzle and difficulty.
 - **Auto-save and resume**: piece positions are saved on pause, background, or exit.
 
+### Done in 1.1
+- Pieces connect to each other on the loose board and move as a group, like a real jigsaw
+- Kids category and kids mode (big pieces, outlines, snap while dragging, no zoom/timer)
+- Hint button, tray sorting (edges first), synthesized snap/join/win sounds, Confirm haptic, confetti
+
 ### Later (v2+)
-- Pieces that connect to each other on the loose board and move as a group, like a real jigsaw
 - Piece rotation mode (two-finger twist or double-tap)
+- Colour-sorted tray, "spread pieces on table", movable reference thumbnail, ghost opacity slider
+- Cache placed pieces into one layer bitmap (draw cost), progressive cutting for 150 pieces
+- Accessibility: TalkBack announcements for progress, tray size setting, reduced motion
+- Parental gate before photo import if the app is ever published to children on Play (Families policy)
 - Sliding-tile mode (15-puzzle) as a second game type
 - Daily puzzle, stats screen, light/dark themes
 - Share a finished puzzle as an image

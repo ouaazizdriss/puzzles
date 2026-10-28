@@ -69,6 +69,22 @@ class PuzzleCutTest {
     }
 
     @Test
+    fun neighboursAreAdjacentCells() {
+        assertEquals(setOf(1, 8), cut.neighbours(0).toSet())
+        assertEquals(setOf(1, 17, 8, 10), cut.neighbours(9).toSet())
+        assertEquals(setOf(cut.count - 2, cut.count - 1 - cut.cols), cut.neighbours(cut.count - 1).toSet())
+    }
+
+    @Test
+    fun edgeRankOrdersCornersEdgesMiddle() {
+        assertEquals(0, cut.edgeRank(0))
+        assertEquals(0, cut.edgeRank(cut.cols - 1))
+        assertEquals(1, cut.edgeRank(1))
+        assertEquals(1, cut.edgeRank(cut.cols))
+        assertEquals(2, cut.edgeRank(cut.cols + 1))
+    }
+
+    @Test
     fun borderPieces() {
         assertTrue(cut.isBorder(0))
         assertTrue(cut.isBorder(cut.count - 1))

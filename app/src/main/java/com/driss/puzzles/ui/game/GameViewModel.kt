@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,10 +25,16 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import kotlin.random.Random
 
-/** Position of a piece's cell origin in world units (pixels of the source bitmap). */
-data class PieceState(val x: Float, val y: Float, val inTray: Boolean, val placed: Boolean)
+/**
+ * Position of a piece's cell origin in world units (pixels of the source bitmap). Loose pieces that
+ * have been joined share a [group] id and keep their correct relative positions.
+ */
+data class PieceState(val x: Float, val y: Float, val inTray: Boolean, val placed: Boolean, val group: Int)
+
+enum class DropResult { None, Joined, Placed }
 
 class GameViewModel(
     private val container: AppContainer,
@@ -36,6 +43,8 @@ class GameViewModel(
     resume: Boolean,
 ) : ViewModel() {
     val image = container.repository.find(imageId)
+    /** Kids mode: big forgiving snaps, outlines on the board, no zoom, no timer. */
+    val kids = image?.isKids == true
 
     var loading by mutableStateOf(true)
         private set
@@ -45,6 +54,8 @@ class GameViewModel(
     var cut by mutableStateOf<PuzzleCut?>(null)
         private set
     var sprites: List<PieceSprite> = emptyList()
+        private set
+    var outlines: List<Path> = emptyList()
         private set
     var ghost: ImageBitmap? = null
         private set
@@ -68,10 +79,17 @@ class GameViewModel(
         private set
     var bestMs by mutableStateOf<Long?>(null)
         private set
+    /** Piece currently pointed out by the hint button, or -1. */
+    var hintId by mutableIntStateOf(-1)
+        private set
+    var hintsUsed by mutableIntStateOf(0)
+        private set
 
-    var showGhost by mutableStateOf(false)
+    var showGhost by mutableStateOf(kids)
     var edgesOnly by mutableStateOf(false)
     var tableColor by mutableIntStateOf(container.prefs.tableColor)
+        private set
+    var soundOn by mutableStateOf(container.prefs.soundOn)
         private set
 
     private var running = false
@@ -105,20 +123,25 @@ class GameViewModel(
 
     private suspend fun cutPieces(bitmap: Bitmap, rows: Int, cols: Int, seed: Long): PuzzleCut {
         val newCut = PuzzleCut(bitmap.width.toFloat(), bitmap.height.toFloat(), rows, cols, seed)
-        sprites = withContext(Dispatchers.Default) { PieceRenderer.render(bitmap, newCut) }
+        withContext(Dispatchers.Default) {
+            sprites = PieceRenderer.render(bitmap, newCut)
+            outlines = PieceRenderer.outlines(newCut)
+        }
         return newCut
     }
 
     private suspend fun newGame(bitmap: Bitmap, rows: Int, cols: Int) {
         val newCut = cutPieces(bitmap, rows, cols, Random.nextLong())
         pieces.clear()
-        pieces.addAll(List(newCut.count) { PieceState(0f, 0f, inTray = true, placed = false) })
+        pieces.addAll(List(newCut.count) { PieceState(0f, 0f, inTray = true, placed = false, group = it) })
         tray.clear()
         tray.addAll((0 until newCut.count).shuffled())
         loose.clear()
         placedCount = 0
         moves = 0
         elapsedMs = 0
+        hintId = -1
+        hintsUsed = 0
         completed = false
         newBest = false
         cut = newCut
@@ -131,9 +154,10 @@ class GameViewModel(
         val sy = bitmap.height.toFloat() / saved.height
         pieces.clear()
         saved.pieces.forEachIndexed { id, p ->
+            val group = if (p.group in saved.pieces.indices) p.group else id
             pieces.add(
-                if (p.placed) PieceState(newCut.homeX(id), newCut.homeY(id), inTray = false, placed = true)
-                else PieceState(p.x * sx, p.y * sy, p.inTray, placed = false),
+                if (p.placed) PieceState(newCut.homeX(id), newCut.homeY(id), inTray = false, placed = true, group = id)
+                else PieceState(p.x * sx, p.y * sy, p.inTray, placed = false, group = if (p.inTray) id else group),
             )
         }
         tray.clear()
@@ -174,40 +198,77 @@ class GameViewModel(
     fun trayItems(): List<Int> =
         if (edgesOnly) cut?.let { c -> tray.filter { c.isBorder(it) } } ?: tray else tray
 
-    fun bringToFront(id: Int) {
-        if (loose.lastOrNull() == id) return
-        loose.remove(id)
-        loose.add(id)
+    /** Loose pieces joined with [id] (including itself), in drawing order. */
+    fun groupOf(id: Int): List<Int> {
+        val p = pieces[id]
+        if (p.inTray || p.placed) return listOf(id)
+        return loose.filter { pieces[it].group == p.group }
+    }
+
+    fun bringToFront(ids: List<Int>) {
+        if (loose.takeLast(ids.size) == ids) return
+        loose.removeAll(ids)
+        loose.addAll(ids)
     }
 
     fun takeFromTray(id: Int, x: Float, y: Float) {
         tray.remove(id)
-        pieces[id] = pieces[id].copy(x = x, y = y, inTray = false)
+        pieces[id] = pieces[id].copy(x = x, y = y, inTray = false, group = id)
         loose.remove(id)
         loose.add(id)
     }
 
-    /** Drops a loose piece at ([x], [y]). Returns true if it snapped into place. */
-    fun drop(id: Int, x: Float, y: Float, tolerance: Float): Boolean {
-        val c = cut ?: return false
+    /**
+     * Moves the group of [grabbed] by ([dx], [dy]). The group locks into the frame if a piece lands near
+     * its home, or joins loose neighbours that line up.
+     */
+    fun dropGroup(grabbed: Int, dx: Float, dy: Float, tolerance: Float): DropResult {
+        val c = cut ?: return DropResult.None
+        val members = groupOf(grabbed)
         moves++
-        if (c.isNearHome(id, x, y, tolerance)) {
-            pieces[id] = PieceState(c.homeX(id), c.homeY(id), inTray = false, placed = true)
-            loose.remove(id)
-            placedCount++
+        if (members.any { c.isNearHome(it, pieces[it].x + dx, pieces[it].y + dy, tolerance) }) {
+            members.forEach { pieces[it] = PieceState(c.homeX(it), c.homeY(it), inTray = false, placed = true, group = it) }
+            loose.removeAll(members)
+            placedCount += members.size
+            if (hintId in members) hintId = -1
             if (placedCount == c.count) complete() else scheduleSave()
-            return true
+            return DropResult.Placed
         }
-        pieces[id] = pieces[id].copy(x = x, y = y)
-        bringToFront(id)
+        members.forEach { pieces[it] = pieces[it].copy(x = pieces[it].x + dx, y = pieces[it].y + dy) }
+
+        var joined = false
+        var changed = true
+        while (changed) {
+            changed = false
+            val group = pieces[grabbed].group
+            val current = loose.filter { pieces[it].group == group }
+            search@ for (m in current) {
+                for (n in c.neighbours(m)) {
+                    val pn = pieces[n]
+                    if (pn.inTray || pn.placed || pn.group == group) continue
+                    val pm = pieces[m]
+                    val ex = pn.x - pm.x - (c.homeX(n) - c.homeX(m))
+                    val ey = pn.y - pm.y - (c.homeY(n) - c.homeY(m))
+                    if (abs(ex) <= tolerance && abs(ey) <= tolerance) {
+                        current.forEach {
+                            pieces[it] = pieces[it].copy(x = pieces[it].x + ex, y = pieces[it].y + ey, group = pn.group)
+                        }
+                        joined = true
+                        changed = true
+                        break@search
+                    }
+                }
+            }
+        }
+        bringToFront(groupOf(grabbed))
         scheduleSave()
-        return false
+        return if (joined) DropResult.Joined else DropResult.None
     }
 
-    /** Puts a piece back in the tray at [visibleIndex] of the currently shown tray items. */
+    /** Puts a single loose piece back in the tray at [visibleIndex] of the currently shown tray items. */
     fun returnToTray(id: Int, visibleIndex: Int) {
         loose.remove(id)
-        pieces[id] = pieces[id].copy(inTray = true)
+        pieces[id] = pieces[id].copy(inTray = true, group = id)
         val visible = trayItems()
         val index = if (visibleIndex < visible.size) tray.indexOf(visible[visibleIndex.coerceAtLeast(0)]) else tray.size
         tray.add(index.coerceIn(0, tray.size), id)
@@ -220,18 +281,43 @@ class GameViewModel(
         tray.addAll(shuffled)
     }
 
+    /** Corners, then edge pieces, then the middle. */
+    fun sortTrayEdgesFirst() {
+        val c = cut ?: return
+        val sorted = tray.sortedBy { c.edgeRank(it) }
+        tray.clear()
+        tray.addAll(sorted)
+    }
+
     /** Moves every loose piece back into the tray. */
     fun collectLoose() {
         val ids = loose.toList()
-        ids.forEach { pieces[it] = pieces[it].copy(inTray = true) }
+        ids.forEach { pieces[it] = pieces[it].copy(inTray = true, group = it) }
         loose.clear()
         tray.addAll(ids)
         scheduleSave()
     }
 
+    /** Points out a piece that is not placed yet: a loose one if any, otherwise one from the tray. */
+    fun showHint() {
+        val candidates = loose.toList().ifEmpty { trayItems() }.ifEmpty { tray.toList() }
+        if (candidates.isEmpty()) return
+        hintId = candidates.random()
+        hintsUsed++
+    }
+
+    fun clearHint() {
+        hintId = -1
+    }
+
     fun selectTableColor(index: Int) {
         tableColor = index
         container.prefs.tableColor = index
+    }
+
+    fun toggleSound() {
+        soundOn = !soundOn
+        container.prefs.soundOn = soundOn
     }
 
     fun restart() {
@@ -249,6 +335,7 @@ class GameViewModel(
     private fun complete() {
         val c = cut ?: return
         completed = true
+        hintId = -1
         saveJob?.cancel()
         newBest = container.prefs.recordTime(imageId, c.count, elapsedMs)
         bestMs = container.prefs.bestTime(imageId, c.count)
@@ -275,7 +362,7 @@ class GameViewModel(
             seed = c.seed,
             width = bitmap.width,
             height = bitmap.height,
-            pieces = pieces.map { SavedPiece(it.x, it.y, it.inTray, it.placed) },
+            pieces = pieces.map { SavedPiece(it.x, it.y, it.inTray, it.placed, it.group) },
             tray = tray.toList(),
             loose = loose.toList(),
             elapsedMs = elapsedMs,

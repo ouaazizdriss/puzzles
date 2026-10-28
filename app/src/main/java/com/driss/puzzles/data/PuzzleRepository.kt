@@ -25,9 +25,12 @@ data class PuzzleImage(
     val author: String? = null,
 ) {
     val isUser get() = file != null
+    val isKids get() = category == KIDS_CATEGORY
     /** Something Coil can load. */
     val model: Any get() = file ?: "file:///android_asset/puzzles/$assetFile"
 }
+
+const val KIDS_CATEGORY = "kids"
 
 @Serializable
 private data class CatalogEntry(

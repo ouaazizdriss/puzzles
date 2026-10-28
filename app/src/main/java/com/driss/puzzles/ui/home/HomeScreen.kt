@@ -69,7 +69,7 @@ import com.driss.puzzles.data.SaveSummary
 import com.driss.puzzles.ui.categoryLabel
 import kotlinx.coroutines.launch
 
-private val TABS = listOf("Puzzles", "My photos", "In progress")
+private val TABS = listOf("Puzzles", "Kids", "My photos", "Saved")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,12 +135,16 @@ fun HomeScreen(onOpen: (String) -> Unit, onCrop: (Uri) -> Unit) {
             }
             when (tab) {
                 0 -> PuzzleGrid {
-                    container.repository.builtIn.groupBy { it.category }.forEach { (category, images) ->
+                    container.repository.builtIn.filterNot { it.isKids }.groupBy { it.category }.forEach { (category, images) ->
                         header(categoryLabel(category))
                         cards(images, saves, onOpen)
                     }
                 }
-                1 -> if (userPhotos.isEmpty()) {
+                1 -> PuzzleGrid {
+                    header("Big pieces, easy to play")
+                    cards(container.repository.builtIn.filter { it.isKids }, saves, onOpen)
+                }
+                2 -> if (userPhotos.isEmpty()) {
                     EmptyState("Turn any photo into a puzzle.\nTap “From photo” to start.")
                 } else {
                     PuzzleGrid {

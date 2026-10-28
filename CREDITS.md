@@ -28,3 +28,10 @@ All photos are from Unsplash (served via picsum.photos) under the Unsplash Licen
 | p43.webp | Brooklyn Bridge | Oleg Chursin | https://unsplash.com/photos/IoCWq07GaG4 |
 | p1067.webp | City skyline | Kevin Young | https://unsplash.com/photos/-icmOdYWXuQ |
 | p163.webp | Corner café | Linh Nguyen | https://unsplash.com/photos/oFAVqfTSby8 |
+| k1003.webp | Baby deer | E+N Photographies | https://unsplash.com/photos/GYumuBnTqKc |
+| k169.webp | Puppies | Noel Lopez | https://unsplash.com/photos/BjelfpszQDw |
+| k1062.webp | Sleepy pug | Matthew Wiebe | https://unsplash.com/photos/2Ts5HnA67k8 |
+| k200.webp | Fluffy cow | Elias Carlsson | https://unsplash.com/photos/wSb8d-ke5-4 |
+| k102.webp | Raspberries | Ben Moore | https://unsplash.com/photos/pJILiyPdrXI |
+
+The Kids illustrations (`k_*.webp` without a number) were drawn for this app with `tools/kids_illustrations.py`, using the Fredoka font (SIL Open Font License).
