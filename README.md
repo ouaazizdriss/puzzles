@@ -3,12 +3,17 @@
 Android jigsaw puzzle app for phones and tablets (Kotlin + Jetpack Compose).
 
 - 24 built-in puzzles in 4 categories (photos from Unsplash, see `CREDITS.md`)
-- Kids tab: 15 puzzles (shapes, numbers, ABC, colors, fruit, scenes, animals) with 4 to 16 big pieces,
+- Kids tab: 37 puzzles (pictures, animals, counting 1 to 10, letters, photos) with 4 to 16 big pieces,
   piece outlines on the board, pieces that snap in while dragging, no zoom and no timer
+- Kids extras: the picture's word read aloud (English or French, from the device language), a star
+  for every finished puzzle and a sticker collection, and a Kids lock that a grown-up opens by
+  holding a button for 3 seconds
 - Turn any photo (gallery or camera) into a puzzle, with cropping
 - 9 to 150 pieces, classic tab/blank shapes, pinch-zoom, picture hint, edge-pieces filter
 - Pieces join each other on the table and move as a group; groups lock into the frame
-- Hint button, tray sorting (edges first), snap sounds and haptics, confetti on completion
+- Hint button, tray sorting (edges first or by color), "spread pieces on the table", a movable
+  picture preview and a slider for the picture under the pieces
+- Snap sounds and haptics, confetti on completion
 - Auto-save and resume, best times
 - Adaptive layout: tray at the bottom in portrait, on the side in landscape / tablets
 

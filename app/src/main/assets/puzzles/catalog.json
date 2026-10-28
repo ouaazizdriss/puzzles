@@ -6,7 +6,10 @@
   "file": "k_shapes.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "Shapes",
+  "sayFr": "Les formes"
  },
  {
   "id": "kids_numbers",
@@ -15,7 +18,10 @@
   "file": "k_numbers.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "Numbers",
+  "sayFr": "Les chiffres"
  },
  {
   "id": "kids_abc",
@@ -24,7 +30,10 @@
   "file": "k_abc.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "A, B, C",
+  "sayFr": "A, B, C"
  },
  {
   "id": "kids_colors",
@@ -33,7 +42,10 @@
   "file": "k_colors.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "Colors",
+  "sayFr": "Les couleurs"
  },
  {
   "id": "kids_fruits",
@@ -42,7 +54,10 @@
   "file": "k_fruits.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "Fruit",
+  "sayFr": "Les fruits"
  },
  {
   "id": "kids_rainbow",
@@ -51,7 +66,10 @@
   "file": "k_rainbow.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "A rainbow",
+  "sayFr": "Un arc-en-ciel"
  },
  {
   "id": "kids_house",
@@ -60,7 +78,10 @@
   "file": "k_house.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "A little house",
+  "sayFr": "Une petite maison"
  },
  {
   "id": "kids_sea",
@@ -69,7 +90,10 @@
   "file": "k_sea.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "Under the sea",
+  "sayFr": "Sous la mer"
  },
  {
   "id": "kids_space",
@@ -78,7 +102,10 @@
   "file": "k_space.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "A rocket in space",
+  "sayFr": "Une fusée dans l'espace"
  },
  {
   "id": "kids_vehicles",
@@ -87,7 +114,274 @@
   "file": "k_vehicles.webp",
   "width": 1600,
   "height": 1200,
-  "author": null
+  "author": null,
+  "group": "pictures",
+  "say": "A car and a bus",
+  "sayFr": "Une voiture et un bus"
+ },
+ {
+  "id": "kids_cat",
+  "title": "Cat",
+  "category": "kids",
+  "file": "k_cat.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "animals",
+  "say": "A cat",
+  "sayFr": "Un chat"
+ },
+ {
+  "id": "kids_frog",
+  "title": "Frog",
+  "category": "kids",
+  "file": "k_frog.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "animals",
+  "say": "A frog",
+  "sayFr": "Une grenouille"
+ },
+ {
+  "id": "kids_ladybug",
+  "title": "Ladybug",
+  "category": "kids",
+  "file": "k_ladybug.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "animals",
+  "say": "A ladybug",
+  "sayFr": "Une coccinelle"
+ },
+ {
+  "id": "kids_owl",
+  "title": "Owl",
+  "category": "kids",
+  "file": "k_owl.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "animals",
+  "say": "An owl",
+  "sayFr": "Un hibou"
+ },
+ {
+  "id": "kids_n1",
+  "title": "1 · One",
+  "category": "kids",
+  "file": "k_n1.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "One",
+  "sayFr": "Un"
+ },
+ {
+  "id": "kids_n2",
+  "title": "2 · Two",
+  "category": "kids",
+  "file": "k_n2.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Two",
+  "sayFr": "Deux"
+ },
+ {
+  "id": "kids_n3",
+  "title": "3 · Three",
+  "category": "kids",
+  "file": "k_n3.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Three",
+  "sayFr": "Trois"
+ },
+ {
+  "id": "kids_n4",
+  "title": "4 · Four",
+  "category": "kids",
+  "file": "k_n4.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Four",
+  "sayFr": "Quatre"
+ },
+ {
+  "id": "kids_n5",
+  "title": "5 · Five",
+  "category": "kids",
+  "file": "k_n5.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Five",
+  "sayFr": "Cinq"
+ },
+ {
+  "id": "kids_n6",
+  "title": "6 · Six",
+  "category": "kids",
+  "file": "k_n6.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Six",
+  "sayFr": "Six"
+ },
+ {
+  "id": "kids_n7",
+  "title": "7 · Seven",
+  "category": "kids",
+  "file": "k_n7.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Seven",
+  "sayFr": "Sept"
+ },
+ {
+  "id": "kids_n8",
+  "title": "8 · Eight",
+  "category": "kids",
+  "file": "k_n8.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Eight",
+  "sayFr": "Huit"
+ },
+ {
+  "id": "kids_n9",
+  "title": "9 · Nine",
+  "category": "kids",
+  "file": "k_n9.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Nine",
+  "sayFr": "Neuf"
+ },
+ {
+  "id": "kids_n10",
+  "title": "10 · Ten",
+  "category": "kids",
+  "file": "k_n10.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "numbers",
+  "say": "Ten",
+  "sayFr": "Dix"
+ },
+ {
+  "id": "kids_lb",
+  "title": "B · Banana",
+  "category": "kids",
+  "file": "k_lb.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "B is for banana",
+  "sayFr": "B, comme banane"
+ },
+ {
+  "id": "kids_lc",
+  "title": "C · Carrot",
+  "category": "kids",
+  "file": "k_lc.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "C is for carrot",
+  "sayFr": "C, comme carotte"
+ },
+ {
+  "id": "kids_lf",
+  "title": "F · Flower",
+  "category": "kids",
+  "file": "k_lf.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "F is for flower",
+  "sayFr": "F, comme fleur"
+ },
+ {
+  "id": "kids_li",
+  "title": "I · Igloo",
+  "category": "kids",
+  "file": "k_li.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "I is for igloo",
+  "sayFr": "I, comme igloo"
+ },
+ {
+  "id": "kids_lo",
+  "title": "O · Orange",
+  "category": "kids",
+  "file": "k_lo.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "O is for orange",
+  "sayFr": "O, comme orange"
+ },
+ {
+  "id": "kids_lp",
+  "title": "P · Pear",
+  "category": "kids",
+  "file": "k_lp.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "P is for pear",
+  "sayFr": "P, comme poire"
+ },
+ {
+  "id": "kids_ls",
+  "title": "S · Sun",
+  "category": "kids",
+  "file": "k_ls.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "S is for sun",
+  "sayFr": "S, comme soleil"
+ },
+ {
+  "id": "kids_lt",
+  "title": "T · Tomato",
+  "category": "kids",
+  "file": "k_lt.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": null,
+  "group": "letters",
+  "say": "T is for tomato",
+  "sayFr": "T, comme tomate"
  },
  {
   "id": "kids_1003",
@@ -96,7 +390,10 @@
   "file": "k1003.webp",
   "width": 1067,
   "height": 1600,
-  "author": "E+N Photographies"
+  "author": "E+N Photographies",
+  "group": "photos",
+  "say": "A baby deer",
+  "sayFr": "Un faon"
  },
  {
   "id": "kids_169",
@@ -105,7 +402,10 @@
   "file": "k169.webp",
   "width": 1600,
   "height": 1064,
-  "author": "Noel Lopez"
+  "author": "Noel Lopez",
+  "group": "photos",
+  "say": "Puppies",
+  "sayFr": "Des chiots"
  },
  {
   "id": "kids_1062",
@@ -114,7 +414,10 @@
   "file": "k1062.webp",
   "width": 1600,
   "height": 1067,
-  "author": "Matthew Wiebe"
+  "author": "Matthew Wiebe",
+  "group": "photos",
+  "say": "A sleepy pug",
+  "sayFr": "Un carlin qui dort"
  },
  {
   "id": "kids_200",
@@ -123,7 +426,10 @@
   "file": "k200.webp",
   "width": 1600,
   "height": 1067,
-  "author": "Elias Carlsson"
+  "author": "Elias Carlsson",
+  "group": "photos",
+  "say": "A fluffy cow",
+  "sayFr": "Une vache toute douce"
  },
  {
   "id": "kids_102",
@@ -132,7 +438,10 @@
   "file": "k102.webp",
   "width": 1600,
   "height": 1067,
-  "author": "Ben Moore"
+  "author": "Ben Moore",
+  "group": "photos",
+  "say": "Raspberries",
+  "sayFr": "Des framboises"
  },
  {
   "id": "builtin_1025",
@@ -168,7 +477,7 @@
   "file": "p237.webp",
   "width": 1600,
   "height": 958,
-  "author": "Andr\u00e9 Spieker"
+  "author": "André Spieker"
  },
  {
   "id": "builtin_593",
@@ -222,7 +531,7 @@
   "file": "p189.webp",
   "width": 1600,
   "height": 1200,
-  "author": "Buzo Jes\u00fas"
+  "author": "Buzo Jesús"
  },
  {
   "id": "builtin_106",
@@ -343,7 +652,7 @@
  },
  {
   "id": "builtin_163",
-  "title": "Corner caf\u00e9",
+  "title": "Corner café",
   "category": "places",
   "file": "p163.webp",
   "width": 1600,

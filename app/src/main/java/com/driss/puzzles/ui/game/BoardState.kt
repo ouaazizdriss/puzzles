@@ -66,13 +66,47 @@ class BoardState(private val vm: GameViewModel, private val density: Float) {
         size = newSize
         trayAtSide = side
         trayThickness = thickness
-        fit()
+        // Show any pieces already spread on the table too, not just the frame.
+        fitContent()
     }
 
     private fun fitScale(): Float {
         val cut = vm.cut ?: return 1f
+        return scaleFor(cut.width, cut.height)
+    }
+
+    private fun scaleFor(width: Float, height: Float): Float {
         val b = boardRect
-        return min(b.width * 0.92f / cut.width, b.height * 0.9f / cut.height).coerceAtLeast(0.01f)
+        return min(b.width * 0.92f / width, b.height * 0.9f / height).coerceAtLeast(0.01f)
+    }
+
+    /** World rect holding the frame and every loose piece. */
+    private fun contentBounds(): Rect {
+        val cut = vm.cut ?: return Rect.Zero
+        var r = Rect(0f, 0f, cut.width, cut.height)
+        for (id in vm.loose) {
+            val p = vm.pieces[id]
+            r = Rect(
+                min(r.left, p.x - cut.pad), min(r.top, p.y - cut.pad),
+                max(r.right, p.x + cut.cellW + cut.pad), max(r.bottom, p.y + cut.cellH + cut.pad),
+            )
+        }
+        return r
+    }
+
+    /** Width / height of the area the puzzle is shown in. */
+    val boardAspect: Float
+        get() = boardRect.let { if (it.height > 0f) it.width / it.height else 1f }
+
+    /** Zooms out until the frame and every piece on the table are visible. */
+    fun fitContent() {
+        if (vm.cut == null || size == IntSize.Zero) return
+        val r = contentBounds()
+        val s = scaleFor(r.width, r.height)
+        val b = boardRect
+        scale = s
+        offset = Offset(b.left + (b.width - r.width * s) / 2 - r.left * s, b.top + (b.height - r.height * s) / 2 - r.top * s)
+        clampTray()
     }
 
     /** Centers the puzzle frame in the board area. */
@@ -188,7 +222,9 @@ class BoardState(private val vm: GameViewModel, private val density: Float) {
 
     fun transform(centroid: Offset, pan: Offset, zoom: Float) {
         val fit = fitScale()
-        val newScale = (scale * zoom).coerceIn(fit * 0.5f, fit * 8f)
+        val bounds = contentBounds()
+        val minScale = min(fit * 0.5f, scaleFor(bounds.width, bounds.height) * 0.8f)
+        val newScale = (scale * zoom).coerceIn(minScale, fit * 8f)
         val z = newScale / scale
         offset = (offset - centroid) * z + centroid + pan
         scale = newScale

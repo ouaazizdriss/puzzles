@@ -2,10 +2,6 @@ package com.driss.puzzles.ui.game
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -16,11 +12,17 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,7 +31,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.BorderOuter
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
@@ -47,6 +52,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -54,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -70,7 +77,11 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -108,6 +119,8 @@ fun GameScreen(imageId: String, target: Int, resume: Boolean, onExit: () -> Unit
     val sounds = remember { Sounds(context.applicationContext) }
     DisposableEffect(Unit) { onDispose { sounds.release() } }
     val haptics = LocalHapticFeedback.current
+    val speaker = remember(vm.kids) { if (vm.kids) Speaker(context) else null }
+    DisposableEffect(speaker) { onDispose { speaker?.release() } }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.onResume() }
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { vm.onPause() }
@@ -122,6 +135,12 @@ fun GameScreen(imageId: String, target: Int, resume: Boolean, onExit: () -> Unit
     LaunchedEffect(vm.completed, vm.cut) {
         if (vm.completed) {
             if (vm.soundOn) sounds.win()
+            if (vm.soundOn && speaker != null) {
+                launch {
+                    delay(900)
+                    speaker.cheer(vm.image?.say, vm.image?.sayFr)
+                }
+            }
             launch {
                 delay(1600)
                 showDone = true
@@ -171,6 +190,12 @@ fun GameScreen(imageId: String, target: Int, resume: Boolean, onExit: () -> Unit
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
+                    val words = vm.image?.takeIf { it.say != null }
+                    if (speaker != null && words != null) {
+                        IconButton(onClick = { speaker.say(words.say, words.sayFr) }) {
+                            Icon(Icons.AutoMirrored.Outlined.VolumeUp, contentDescription = "Say the word")
+                        }
+                    }
                     IconButton(onClick = { vm.showHint() }, enabled = !vm.completed) {
                         Icon(Icons.Outlined.Lightbulb, contentDescription = "Hint")
                     }
@@ -201,6 +226,20 @@ fun GameScreen(imageId: String, target: Int, resume: Boolean, onExit: () -> Unit
                                     text = { Text("Sort tray: edges first") },
                                     onClick = { menu = false; vm.sortTrayEdgesFirst(); board.clampTray() },
                                 )
+                                DropdownMenuItem(
+                                    text = { Text("Sort tray: by color") },
+                                    onClick = { menu = false; vm.sortTrayByColor(); board.clampTray() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Spread pieces on the table") },
+                                    enabled = !vm.completed && vm.spreadable().isNotEmpty(),
+                                    onClick = {
+                                        menu = false
+                                        vm.spreadTray(board.boardAspect)
+                                        board.clampTray()
+                                        board.fitContent()
+                                    },
+                                )
                             }
                             DropdownMenuItem(text = { Text("Shuffle tray") }, onClick = { menu = false; vm.shuffleTray() })
                             if (!vm.kids) {
@@ -221,6 +260,25 @@ fun GameScreen(imageId: String, target: Int, resume: Boolean, onExit: () -> Unit
                             )
                             DropdownMenuItem(text = { Text("Restart") }, onClick = { menu = false; vm.restart() })
                             HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Picture preview") },
+                                leadingIcon = {
+                                    if (vm.showPreview) Icon(Icons.Filled.Check, contentDescription = null)
+                                },
+                                onClick = { menu = false; vm.togglePreview() },
+                            )
+                            Text(
+                                "Picture under the pieces",
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp),
+                            )
+                            Slider(
+                                value = vm.ghostAlpha,
+                                onValueChange = vm::updateGhostAlpha,
+                                onValueChangeFinished = vm::saveGhostAlpha,
+                                valueRange = 0.1f..0.8f,
+                                modifier = Modifier.padding(horizontal = 12.dp).width(220.dp),
+                            )
                             Text(
                                 "Table color",
                                 style = MaterialTheme.typography.labelMedium,
@@ -257,7 +315,10 @@ fun GameScreen(imageId: String, target: Int, resume: Boolean, onExit: () -> Unit
                     CircularProgressIndicator()
                     Text("Cutting pieces…", modifier = Modifier.padding(top = 12.dp))
                 }
-                else -> Board(vm, board, celebrate.value, onDrop)
+                else -> {
+                    Board(vm, board, { celebrate.value }, onDrop)
+                    if (vm.showPreview && !vm.completed) vm.ghost?.let { FloatingPreview(it, vm.image?.title) }
+                }
             }
         }
     }
@@ -274,7 +335,20 @@ fun GameScreen(imageId: String, target: Int, resume: Boolean, onExit: () -> Unit
             },
             text = {
                 if (vm.kids) {
-                    Text("You finished the puzzle!", style = MaterialTheme.typography.titleMedium)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Text("You finished the puzzle!", style = MaterialTheme.typography.titleMedium)
+                        Icon(
+                            Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = StarColor,
+                            modifier = Modifier.padding(top = 12.dp).size(72.dp),
+                        )
+                        Text(
+                            "You earned a star! You have ${vm.starsTotal}.",
+                            style = MaterialTheme.typography.titleSmall,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 } else {
                     Column {
                         Text("${vm.cut?.count} pieces in ${formatDuration(vm.elapsedMs)} · ${vm.moves} moves")
@@ -299,7 +373,7 @@ private val ConfettiColors = listOf(
 )
 
 @Composable
-private fun Board(vm: GameViewModel, board: BoardState, celebrate: Float, onDrop: (DropResult) -> Unit) {
+private fun Board(vm: GameViewModel, board: BoardState, celebrate: () -> Float, onDrop: (DropResult) -> Unit) {
     val onDropState by rememberUpdatedState(onDrop)
     val table = TableColors[vm.tableColor.coerceIn(TableColors.indices)]
     val trayColor = if (table.luminance() > 0.5f) Color.Black.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.30f)
@@ -311,12 +385,15 @@ private fun Board(vm: GameViewModel, board: BoardState, celebrate: Float, onDrop
             flash.animateTo(0f, tween(450))
         }
     }
-    val pulse by rememberInfiniteTransition(label = "hint").animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse),
-        label = "hintPulse",
-    )
+    // Animates only while a hint is showing; values are read in the draw phase so nothing recomposes.
+    val pulse = remember { Animatable(1f) }
+    LaunchedEffect(vm.hintId) {
+        if (vm.hintId < 0) return@LaunchedEffect
+        while (true) {
+            pulse.animateTo(0.35f, tween(500))
+            pulse.animateTo(1f, tween(500))
+        }
+    }
     val confetti = remember(vm.cut) {
         val rnd = Random(7)
         List(140) {
@@ -406,11 +483,12 @@ private fun Board(vm: GameViewModel, board: BoardState, celebrate: Float, onDrop
                     }
                 },
         ) {
+            val done = celebrate()
             drawRect(table)
-            drawPuzzle(vm, board, flash.value, pulse, celebrate, dp)
-            drawTray(vm, board, if (board.overTray) trayColor.copy(alpha = trayColor.alpha + 0.15f) else trayColor, pulse)
+            drawPuzzle(vm, board, flash.value, pulse.value, done, dp)
+            drawTray(vm, board, if (board.overTray) trayColor.copy(alpha = trayColor.alpha + 0.15f) else trayColor, pulse.value)
             if (board.dragId >= 0) drawDragged(vm, board)
-            if (celebrate > 0f && celebrate < 1f) drawConfetti(confetti, celebrate, dp)
+            if (done > 0f && done < 1f) drawConfetti(confetti, done, dp)
         }
     }
 }
@@ -418,6 +496,45 @@ private fun Board(vm: GameViewModel, board: BoardState, celebrate: Float, onDrop
 private val ShadowFilter = ColorFilter.tint(Color.Black)
 private val FlashFilter = ColorFilter.tint(Color.White)
 private val HintColor = Color(0xFFFFD54F)
+private val StarColor = Color(0xFFFFB300)
+
+/** The finished picture in a small card that can be dragged anywhere; tap it to make it bigger. */
+@Composable
+private fun FloatingPreview(image: ImageBitmap, title: String?) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        var big by remember { mutableStateOf(false) }
+        val width = minOf(maxWidth, maxHeight) * (if (big) 0.6f else 0.32f)
+        val density = LocalDensity.current
+        val margin = with(density) { 12.dp.toPx() }
+        var x by remember { mutableFloatStateOf(margin) }
+        var y by remember { mutableFloatStateOf(margin) }
+        val maxX = (constraints.maxWidth - with(density) { width.toPx() }).coerceAtLeast(0f)
+        val maxY = (constraints.maxHeight - with(density) { (width * image.height.toFloat() / image.width).toPx() }).coerceAtLeast(0f)
+        // The drag handler outlives size changes, so it reads the current limits.
+        val limitX by rememberUpdatedState(maxX)
+        val limitY by rememberUpdatedState(maxY)
+        Image(
+            image,
+            contentDescription = title?.let { "Picture of $it" } ?: "Puzzle picture",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .offset { IntOffset(x.coerceIn(0f, maxX).roundToInt(), y.coerceIn(0f, maxY).roundToInt()) }
+                .width(width)
+                .aspectRatio(image.width.toFloat() / image.height)
+                .shadow(8.dp, MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.medium)
+                .border(2.dp, Color.White.copy(alpha = 0.8f), MaterialTheme.shapes.medium)
+                .pointerInput(Unit) {
+                    detectDragGestures { change, drag ->
+                        change.consume()
+                        x = (x.coerceIn(0f, limitX) + drag.x).coerceIn(0f, limitX)
+                        y = (y.coerceIn(0f, limitY) + drag.y).coerceIn(0f, limitY)
+                    }
+                }
+                .clickable { big = !big },
+        )
+    }
+}
 
 private fun DrawScope.worldTransform(board: BoardState, block: DrawScope.() -> Unit) = withTransform({
     translate(board.offset.x, board.offset.y)
@@ -432,7 +549,7 @@ private fun DrawScope.drawPuzzle(vm: GameViewModel, board: BoardState, flash: Fl
         drawRect(Color.Black.copy(alpha = 0.18f), size = frame)
         drawRect(Color.White.copy(alpha = 0.35f), size = frame, style = Stroke(width = 1.5f * dp / board.scale))
         vm.ghost?.takeIf { vm.showGhost }?.let {
-            drawImage(it, dstSize = IntSize(cut.width.roundToInt(), cut.height.roundToInt()), alpha = if (vm.kids) 0.35f else 0.3f)
+            drawImage(it, dstSize = IntSize(cut.width.roundToInt(), cut.height.roundToInt()), alpha = vm.ghostAlpha)
         }
         if (vm.kids) {
             // Silhouettes of the missing pieces, so children can match shapes.
@@ -441,10 +558,8 @@ private fun DrawScope.drawPuzzle(vm: GameViewModel, board: BoardState, flash: Fl
                 if (!vm.pieces[id].placed) drawPath(vm.outlines[id], Color.White.copy(alpha = 0.55f), style = outline)
             }
         }
-        for (id in vm.pieces.indices) {
-            val p = vm.pieces[id]
-            if (p.placed) drawImage(vm.sprites[id].image, Offset(p.x - pad, p.y - pad))
-        }
+        // Reading placedVersion redraws the board whenever pieces are painted into the layer.
+        if (vm.placedVersion >= 0) vm.placedImage?.let { drawImage(it) }
         if (flash > 0f) {
             for (id in board.flashIds) {
                 val p = vm.pieces[id]

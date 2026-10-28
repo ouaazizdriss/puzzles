@@ -34,4 +34,4 @@ All photos are from Unsplash (served via picsum.photos) under the Unsplash Licen
 | k200.webp | Fluffy cow | Elias Carlsson | https://unsplash.com/photos/wSb8d-ke5-4 |
 | k102.webp | Raspberries | Ben Moore | https://unsplash.com/photos/pJILiyPdrXI |
 
-The Kids illustrations (`k_*.webp` without a number) were drawn for this app with `tools/kids_illustrations.py`, using the Fredoka font (SIL Open Font License).
+The Kids illustrations (every `k_*.webp`; the Kids photos are the `k<number>.webp` files) were drawn for this app with `tools/kids_illustrations.py`, using the Fredoka font (SIL Open Font License).

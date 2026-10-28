@@ -44,12 +44,21 @@ Everything runs offline, with no backend and no account.
 - Kids category and kids mode (big pieces, outlines, snap while dragging, no zoom/timer)
 - Hint button, tray sorting (edges first), synthesized snap/join/win sounds, Confirm haptic, confetti
 
+### Done in 1.2
+- Placed pieces cached in one layer bitmap; the hint pulse only animates while a hint shows
+- Colour-sorted tray, "spread pieces on the table" (screen-shaped rings, re-run after rotating)
+- Movable picture preview, slider for the picture under the pieces
+- Kids lock with a hold-for-3-seconds grown-up gate
+- Stars and a sticker collection for finished Kids puzzles
+- 22 more Kids pictures: counting 1 to 10, letters (words that start with the same letter in English
+  and French), animals
+- Text-to-speech: the picture's word in English or French
+
 ### Later (v2+)
 - Piece rotation mode (two-finger twist or double-tap)
-- Colour-sorted tray, "spread pieces on table", movable reference thumbnail, ghost opacity slider
-- Cache placed pieces into one layer bitmap (draw cost), progressive cutting for 150 pieces
+- Progressive cutting for 150 pieces
 - Accessibility: TalkBack announcements for progress, tray size setting, reduced motion
-- Parental gate before photo import if the app is ever published to children on Play (Families policy)
+- French translation of the interface
 - Sliding-tile mode (15-puzzle) as a second game type
 - Daily puzzle, stats screen, light/dark themes
 - Share a finished puzzle as an image

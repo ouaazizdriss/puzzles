@@ -1,8 +1,11 @@
 package com.driss.puzzles.ui.game
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.os.SystemClock
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -26,6 +29,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.hypot
+import kotlin.math.max
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 /**
@@ -59,6 +66,18 @@ class GameViewModel(
         private set
     var ghost: ImageBitmap? = null
         private set
+    /** Average color of each piece, for sorting the tray. */
+    private var colors = IntArray(0)
+
+    /**
+     * Every placed piece painted into one picture, so the board draws a single image instead of one per
+     * placed piece. [placedVersion] changes whenever it is repainted.
+     */
+    private var placedBitmap: Bitmap? = null
+    var placedImage: ImageBitmap? = null
+        private set
+    var placedVersion by mutableIntStateOf(0)
+        private set
 
     /** Indexed by piece id. */
     val pieces = mutableStateListOf<PieceState>()
@@ -86,6 +105,13 @@ class GameViewModel(
         private set
 
     var showGhost by mutableStateOf(kids)
+    var ghostAlpha by mutableFloatStateOf(container.prefs.ghostAlpha)
+        private set
+    var showPreview by mutableStateOf(container.prefs.previewOn)
+        private set
+    /** Stars collected in Kids mode, including the one for this puzzle once it is finished. */
+    var starsTotal by mutableIntStateOf(0)
+        private set
     var edgesOnly by mutableStateOf(false)
     var tableColor by mutableIntStateOf(container.prefs.tableColor)
         private set
@@ -126,7 +152,14 @@ class GameViewModel(
         withContext(Dispatchers.Default) {
             sprites = PieceRenderer.render(bitmap, newCut)
             outlines = PieceRenderer.outlines(newCut)
+            colors = PieceRenderer.averageColors(bitmap, newCut)
         }
+        val layer = placedBitmap?.takeIf { it.width == bitmap.width && it.height == bitmap.height }
+            ?: Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+        layer.eraseColor(Color.TRANSPARENT)
+        placedBitmap = layer
+        placedImage = layer.asImageBitmap()
+        placedVersion++
         return newCut
     }
 
@@ -170,6 +203,7 @@ class GameViewModel(
             if (!p.inTray && !p.placed && id !in loose) loose.add(id)
         }
         placedCount = pieces.count { it.placed }
+        paintPlaced(newCut, pieces.indices.filter { pieces[it].placed })
         moves = saved.moves
         elapsedMs = saved.elapsedMs
         completed = false
@@ -228,6 +262,7 @@ class GameViewModel(
         moves++
         if (members.any { c.isNearHome(it, pieces[it].x + dx, pieces[it].y + dy, tolerance) }) {
             members.forEach { pieces[it] = PieceState(c.homeX(it), c.homeY(it), inTray = false, placed = true, group = it) }
+            paintPlaced(c, members)
             loose.removeAll(members)
             placedCount += members.size
             if (hintId in members) hintId = -1
@@ -265,6 +300,14 @@ class GameViewModel(
         return if (joined) DropResult.Joined else DropResult.None
     }
 
+    private fun paintPlaced(c: PuzzleCut, ids: List<Int>) {
+        val layer = placedBitmap ?: return
+        if (ids.isEmpty()) return
+        val canvas = Canvas(layer)
+        ids.forEach { canvas.drawBitmap(sprites[it].bitmap, c.homeX(it) - c.pad, c.homeY(it) - c.pad, null) }
+        placedVersion++
+    }
+
     /** Puts a single loose piece back in the tray at [visibleIndex] of the currently shown tray items. */
     fun returnToTray(id: Int, visibleIndex: Int) {
         loose.remove(id)
@@ -289,6 +332,64 @@ class GameViewModel(
         tray.addAll(sorted)
     }
 
+    /** Groups the tray by color: hues around the color wheel, then greys from light to dark. */
+    fun sortTrayByColor() {
+        if (colors.isEmpty()) return
+        val hsv = FloatArray(3)
+        val key = { id: Int ->
+            Color.colorToHSV(colors[id], hsv)
+            if (hsv[1] < 0.18f || hsv[2] < 0.18f) 400f + (1f - hsv[2]) * 100f else hsv[0]
+        }
+        val sorted = tray.sortedBy(key)
+        tray.clear()
+        tray.addAll(sorted)
+    }
+
+    /** Pieces that "spread" would lay out: the tray plus loose pieces not joined to others. */
+    fun spreadable(): List<Int> =
+        tray + loose.filter { id -> loose.none { it != id && pieces[it].group == pieces[id].group } }
+
+    /**
+     * Lays the tray and the single loose pieces out on the table around the frame, nearest spots first,
+     * without covering joined groups. Running it again (e.g. after rotating) re-arranges them. [boardAspect] (width / height of the visible board) shapes the layout so it
+     * fits the screen: tall screens get more pieces above and below the frame.
+     */
+    fun spreadTray(boardAspect: Float) {
+        val c = cut ?: return
+        val ids = spreadable().shuffled()
+        if (ids.isEmpty()) return
+        val moving = ids.toSet()
+        val gap = c.pad * 0.6f
+        val stepX = c.cellW + 2 * c.pad - gap
+        val stepY = c.cellH + 2 * c.pad - gap
+        val taken = loose.filter { it !in moving }.map { pieces[it].x + c.cellW / 2 to pieces[it].y + c.cellH / 2 }
+        val reach = ceil(sqrt(ids.size.toFloat())).toInt() + max(c.rows, c.cols)
+        val spots = ArrayList<Triple<Float, Float, Float>>()
+        for (i in -reach..reach) for (j in -reach..reach) {
+            val x = c.width / 2 + i * stepX - c.cellW / 2
+            val y = c.height / 2 + j * stepY - c.cellH / 2
+            // Distance from the frame, with knobs counted, so no piece overlaps the frame.
+            val dx = max(max(-(x + c.cellW + c.pad), x - c.pad - c.width), 0f)
+            val dy = max(max(-(y + c.cellH + c.pad), y - c.pad - c.height), 0f)
+            if (dx <= 0f && dy <= 0f) continue
+            val cx = x + c.cellW / 2
+            val cy = y + c.cellH / 2
+            if (taken.any { abs(it.first - cx) < stepX * 0.8f && abs(it.second - cy) < stepY * 0.8f }) continue
+            // Rings shaped like the screen around the frame's center, so the pieces fill the view.
+            val ox = cx - c.width / 2
+            val oy = cy - c.height / 2
+            val score = max(abs(ox) / boardAspect.coerceIn(0.3f, 3f), abs(oy)) + hypot(ox, oy) * 0.001f
+            spots.add(Triple(x, y, score))
+        }
+        spots.sortBy { it.third }
+        ids.zip(spots).forEach { (id, spot) ->
+            pieces[id] = pieces[id].copy(x = spot.first, y = spot.second, inTray = false, group = id)
+            tray.remove(id)
+            if (id !in loose) loose.add(id)
+        }
+        scheduleSave()
+    }
+
     /** Moves every loose piece back into the tray. */
     fun collectLoose() {
         val ids = loose.toList()
@@ -308,6 +409,20 @@ class GameViewModel(
 
     fun clearHint() {
         hintId = -1
+    }
+
+    fun updateGhostAlpha(value: Float) {
+        ghostAlpha = value
+        showGhost = true
+    }
+
+    fun saveGhostAlpha() {
+        container.prefs.ghostAlpha = ghostAlpha
+    }
+
+    fun togglePreview() {
+        showPreview = !showPreview
+        container.prefs.previewOn = showPreview
     }
 
     fun selectTableColor(index: Int) {
@@ -339,6 +454,7 @@ class GameViewModel(
         saveJob?.cancel()
         newBest = container.prefs.recordTime(imageId, c.count, elapsedMs)
         bestMs = container.prefs.bestTime(imageId, c.count)
+        if (kids) starsTotal = container.prefs.addStar(imageId)
         container.appScope.launch { container.saves.delete(imageId) }
     }
 
@@ -353,7 +469,8 @@ class GameViewModel(
     /** Writes the current game to disk (on the app scope, so it finishes even if the screen closes). */
     fun persist() {
         val c = cut ?: return
-        if (loading || completed || moves == 0) return
+        // Nothing to keep until a piece has left the tray.
+        if (loading || completed || (moves == 0 && loose.isEmpty())) return
         val bitmap = source ?: return
         val snapshot = SavedGame(
             imageId = imageId,

@@ -71,6 +71,23 @@ object PieceRenderer {
         }
     }
 
+    /** Average color of each piece's cell, sampled on a small grid. */
+    fun averageColors(source: Bitmap, cut: PuzzleCut): IntArray = IntArray(cut.count) { id ->
+        val n = 8
+        var r = 0
+        var g = 0
+        var b = 0
+        for (i in 0 until n) for (j in 0 until n) {
+            val x = (cut.homeX(id) + (i + 0.5f) * cut.cellW / n).toInt().coerceIn(0, source.width - 1)
+            val y = (cut.homeY(id) + (j + 0.5f) * cut.cellH / n).toInt().coerceIn(0, source.height - 1)
+            val c = source.getPixel(x, y)
+            r += (c shr 16) and 0xFF
+            g += (c shr 8) and 0xFF
+            b += c and 0xFF
+        }
+        android.graphics.Color.rgb(r / (n * n), g / (n * n), b / (n * n))
+    }
+
     private fun strokePaint(width: Float, argb: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = width

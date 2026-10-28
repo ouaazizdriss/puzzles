@@ -1,6 +1,7 @@
 """Generates the illustrated Kids puzzles.
 
-Usage: python3 tools/kids_illustrations.py <Fredoka.ttf> <out_dir>
+Usage: python3 tools/kids_illustrations.py <Fredoka.ttf> <out_dir> [name ...]
+With names (e.g. "numbers letters"), only those generators run.
 Fredoka (OFL): https://github.com/google/fonts/tree/main/ofl/fredoka
 """
 import math
@@ -565,7 +566,282 @@ def colors():
     c.save("k_colors.webp")
 
 
+# ---------- more drawings for the learning sets ----------
+def carrot(c, cx, cy, r, shadow=False):
+    for dx, rot in [(-0.25, -20), (0, 0), (0.25, 20)]:
+        a = math.radians(rot - 90)
+        tip = (cx + dx * r + math.cos(a) * r * 0.75, cy - r * 0.7 + math.sin(a) * r * 0.75)
+        c.poly([(cx + dx * r - r * 0.12, cy - r * 0.65), tip, (cx + dx * r + r * 0.12, cy - r * 0.65)], (56, 176, 0), shadow=shadow)
+    c.poly([(cx - r * 0.45, cy - r * 0.7), (cx + r * 0.45, cy - r * 0.7), (cx + r * 0.08, cy + r * 1.1), (cx - r * 0.08, cy + r * 1.1)],
+           (255, 130, 20), shadow=shadow)
+    c.ellipse((cx - r * 0.45, cy - r * 0.9, cx + r * 0.45, cy - r * 0.5), (255, 130, 20), shadow=shadow)
+    if shadow:
+        return
+    for k, y in enumerate((-0.3, 0.05, 0.4)):
+        w = 0.32 - k * 0.08
+        c.line([(cx - r * w, cy + r * y), (cx - r * (w - 0.18), cy + r * y)], (210, 95, 10), r * 0.06)
+
+
+def tomato(c, cx, cy, r, shadow=False):
+    c.ellipse((cx - r, cy - r * 0.85, cx + r, cy + r * 0.95), (235, 45, 40), shadow=shadow)
+    if shadow:
+        return
+    c.ellipse((cx - r * 0.6, cy - r * 0.5, cx - r * 0.25, cy - r * 0.15), (255, 130, 120))
+    c.poly(star_pts(cx, cy - r * 0.78, r * 0.45, r * 0.15, n=5), (56, 176, 0))
+    c.line([(cx, cy - r * 0.8), (cx + r * 0.05, cy - r * 1.1)], (56, 140, 0), r * 0.08)
+
+
+def flower(c, cx, cy, r, col=(255, 99, 196), shadow=False):
+    c.line([(cx, cy), (cx, cy + r * 1.3)], (60, 150, 50), r * 0.12) if not shadow else None
+    if not shadow:
+        c.ellipse((cx, cy + r * 0.7, cx + r * 0.6, cy + r * 0.95), (80, 175, 60))
+    for k in range(6):
+        a = math.radians(k * 60)
+        px, py = cx + math.cos(a) * r * 0.5, cy + math.sin(a) * r * 0.5
+        c.ellipse((px - r * 0.38, py - r * 0.38, px + r * 0.38, py + r * 0.38), col, shadow=shadow)
+    if not shadow:
+        c.ellipse((cx - r * 0.3, cy - r * 0.3, cx + r * 0.3, cy + r * 0.3), (255, 214, 10))
+
+
+def igloo(c, cx, cy, r, shadow=False):
+    cy, r = cy + r * 0.25, r * 1.3
+    box = (cx - r * 1.2, cy - r * 0.9, cx + r * 1.2, cy + r * 1.5)
+    if shadow:
+        c.sd.pieslice(sc(box), 180, 360, fill=255)
+        return
+    c.d.pieslice(sc(box), 180, 360, fill=(235, 248, 255))
+    mid = (box[1] + box[3]) / 2
+    for k in range(1, 4):  # rows of ice blocks
+        y = mid - k * r * 0.3
+        half = math.sqrt(max(0, 1 - ((mid - y) / (r * 1.2)) ** 2)) * r * 1.2
+        c.line([(cx - half + 6, y), (cx + half - 6, y)], (170, 210, 235), r * 0.04)
+    c.d.pieslice(sc((cx - r * 0.38, mid - r * 0.6, cx + r * 0.38, mid + r * 0.6)), 180, 360, fill=(60, 90, 140))
+    c.arc(box, 180, 360, (150, 195, 225), r * 0.05)
+
+
+def sun_plain(c, cx, cy, r, shadow=False):
+    if shadow:
+        r *= 0.72
+        c.ellipse((cx - r, cy - r, cx + r, cy + r), None, shadow=True)
+        return
+    sun(c, cx, cy, r * 0.72)
+
+
+def star_item(c, cx, cy, r, shadow=False):
+    c.poly(star_pts(cx, cy + r * 0.08, r * 1.05, r * 0.45), (255, 190, 11), shadow=shadow)
+
+
+def heart_item(c, cx, cy, r, shadow=False):
+    c.poly(heart_pts(cx, cy + r * 0.1, r * 2.0), (239, 71, 111), shadow=shadow)
+
+
+def ball(c, cx, cy, r, shadow=False):
+    c.ellipse((cx - r, cy - r, cx + r, cy + r), (58, 134, 255), shadow=shadow)
+    if shadow:
+        return
+    c.arc((cx - r, cy - r * 0.35, cx + r, cy + r * 0.35), 0, 360, (255, 255, 255), r * 0.16)
+    c.ellipse((cx - r * 0.6, cy - r * 0.7, cx - r * 0.25, cy - r * 0.35), (150, 190, 255))
+
+
+# Strong colors only: white digits and letters must stay readable on them.
+CARD_COLORS = [(239, 71, 111), (17, 138, 178), (6, 170, 130), (131, 56, 236), (251, 86, 7),
+               (58, 134, 255), (220, 60, 160), (40, 150, 80), (200, 70, 40), (90, 90, 200)]
+
+COUNT_ITEMS = [apple, banana, orange, strawberry, pear, cherries, star_item, heart_item, ball, tomato]
+COUNT_BG = [(255, 236, 236), (255, 249, 220), (255, 240, 222), (255, 232, 240), (238, 252, 224),
+            (255, 234, 236), (232, 240, 255), (255, 236, 244), (228, 244, 255), (240, 255, 236)]
+
+
+def count_cards():
+    """One picture per number: the digit and that many things to count."""
+    for n in range(1, 11):
+        col = CARD_COLORS[n - 1]
+        c = Canvas(COUNT_BG[n - 1])
+        dots_bg(c, tuple(max(0, v - 18) for v in COUNT_BG[n - 1]))
+        left = (60, 60, 600, H - 60)
+        right = (650, 60, W - 60, H - 60)
+        for b in (left, right):
+            c.rrect(b, 50, None, shadow=True)
+        c.flush_shadow(off=10, blur=12, alpha=0.2)
+        c.rrect(left, 50, col)
+        c.rrect((left[0] + 14, left[1] + 14, left[2] - 14, left[3] - 14), 40, None, outline=(255, 255, 255), width=6)
+        c.text(((left[0] + left[2]) / 2, (left[1] + left[3]) / 2 + 10), str(n), 470 if n < 10 else 340,
+               (255, 255, 255), stroke=10, stroke_fill=darker(col, 0.7))
+        c.rrect(right, 50, (255, 255, 255))
+        cols = 1 if n == 1 else 2 if n <= 4 else 3 if n <= 9 else 4
+        rows = math.ceil(n / cols)
+        cw = (right[2] - right[0] - 60) / cols
+        rh = (right[3] - right[1] - 60) / rows
+        r = min(cw, rh) * 0.33
+        fn = COUNT_ITEMS[n - 1]
+        spots = []
+        for k in range(n):
+            row, colk = divmod(k, cols)
+            in_row = min(cols, n - row * cols)
+            x = (right[0] + right[2]) / 2 + (colk - (in_row - 1) / 2) * cw
+            y = right[1] + 30 + rh * (row + 0.5) + r * 0.1
+            spots.append((x, y))
+        for x, y in spots:
+            fn(c, x, y, r, shadow=True)
+        c.flush_shadow(off=6, blur=6, alpha=0.2)
+        for x, y in spots:
+            fn(c, x, y, r)
+        c.save(f"k_n{n}.webp")
+
+
+LETTERS = [("B", banana, (255, 246, 214)), ("C", carrot, (255, 238, 222)), ("F", flower, (240, 250, 232)),
+           ("I", igloo, (225, 240, 255)), ("O", orange, (255, 244, 226)), ("P", pear, (240, 252, 226)),
+           ("S", sun_plain, (226, 244, 255)), ("T", tomato, (255, 236, 234))]
+
+
+def letter_cards():
+    """A letter and a thing whose name starts with it in both English and French."""
+    for i, (letter, fn, bg) in enumerate(LETTERS):
+        col = CARD_COLORS[(i * 3) % len(CARD_COLORS)]
+        c = Canvas(bg)
+        dots_bg(c, tuple(max(0, v - 18) for v in bg))
+        left = (60, 60, 760, H - 60)
+        right = (820, 60, W - 60, H - 60)
+        for b in (left, right):
+            c.rrect(b, 50, None, shadow=True)
+        c.flush_shadow(off=10, blur=12, alpha=0.2)
+        c.rrect(left, 50, col)
+        c.rrect((left[0] + 14, left[1] + 14, left[2] - 14, left[3] - 14), 40, None, outline=(255, 255, 255), width=6)
+        c.text(((left[0] + left[2]) / 2, (left[1] + left[3]) / 2 + 10), letter + letter.lower(), 400,
+               (255, 255, 255), stroke=10, stroke_fill=darker(col, 0.7))
+        c.rrect(right, 50, (255, 255, 255))
+        cx, cy, r = (right[0] + right[2]) / 2, (right[1] + right[3]) / 2, 250
+        fn(c, cx, cy, r, shadow=True)
+        c.flush_shadow(off=10, blur=10, alpha=0.22)
+        fn(c, cx, cy, r)
+        c.save(f"k_l{letter.lower()}.webp")
+
+
+def eyes(c, cx, cy, r, gap, white=True):
+    for dx in (-gap, gap):
+        if white:
+            c.ellipse((cx + dx - r, cy - r, cx + dx + r, cy + r), (255, 255, 255))
+        c.ellipse((cx + dx - r * 0.55, cy - r * 0.45, cx + dx + r * 0.55, cy + r * 0.65), (40, 30, 40))
+        c.ellipse((cx + dx - r * 0.25, cy - r * 0.35, cx + dx + r * 0.05, cy - r * 0.05), (255, 255, 255))
+
+
+def grass(c, top=950):
+    c.d.rectangle(sc((0, top, W, H)), fill=(120, 200, 90))
+    c.ellipse((-200, top - 70, 900, top + 300), (100, 185, 75))
+    c.ellipse((700, top - 50, 1900, top + 350), (130, 210, 95))
+
+
+def cat():
+    c = Canvas((0, 0, 0))
+    c.gradient((255, 220, 235), (255, 245, 250))
+    c.rrect((0, 980, W, H), 0, (210, 160, 120))
+    col, dark = (255, 165, 70), (220, 120, 40)
+    cx, cy = 800, 560
+    c.ellipse((cx - 380, cy - 300, cx + 380, cy + 330), None, shadow=True)
+    c.flush_shadow(off=12, blur=14, alpha=0.2)
+    for d in (-1, 1):
+        c.poly([(cx + d * 330, cy - 120), (cx + d * 300, cy - 470), (cx + d * 90, cy - 260)], col)
+        c.poly([(cx + d * 285, cy - 170), (cx + d * 270, cy - 390), (cx + d * 150, cy - 255)], (255, 190, 200))
+    c.ellipse((cx - 380, cy - 300, cx + 380, cy + 330), col)
+    for k in (-1, 0, 1):
+        c.poly([(cx + k * 90 - 25, cy - 300), (cx + k * 90 + 25, cy - 300), (cx + k * 90, cy - 170)], dark)
+    c.ellipse((cx - 170, cy + 40, cx + 170, cy + 290), (255, 235, 210))
+    eyes(c, cx, cy - 40, 70, 150, white=False)
+    c.poly([(cx - 40, cy + 70), (cx + 40, cy + 70), (cx, cy + 120)], (240, 100, 130))
+    c.arc((cx - 80, cy + 80, cx, cy + 180), 10, 150, (90, 50, 30), 10)
+    c.arc((cx, cy + 80, cx + 80, cy + 180), 30, 170, (90, 50, 30), 10)
+    for d in (-1, 1):
+        for k in (-1, 0, 1):
+            c.line([(cx + d * 150, cy + 120 + k * 30), (cx + d * 400, cy + 90 + k * 60)], (120, 80, 60), 7)
+    for x in (200, 1400):
+        c.ellipse((x - 80, 1040, x + 80, 1140), (255, 255, 255))
+        c.ellipse((x - 40, 1060, x + 40, 1100), (90, 160, 230))
+    c.save("k_cat.webp")
+
+
+def frog():
+    c = Canvas((0, 0, 0))
+    c.gradient((150, 215, 255), (220, 245, 255))
+    c.rrect((0, 820, W, H), 0, (70, 150, 210))
+    for x, y in [(300, 1000), (1300, 1050)]:
+        c.d.pieslice(sc((x - 230, y - 110, x + 230, y + 110)), 20, 340, fill=(60, 170, 70))
+    c.ellipse((520, 880, 1080, 1100), (60, 170, 70))
+    col = (110, 200, 70)
+    cx, cy = 800, 720
+    c.ellipse((cx - 360, cy - 230, cx + 360, cy + 200), None, shadow=True)
+    c.flush_shadow(off=12, blur=14, alpha=0.2)
+    for d in (-1, 1):
+        c.ellipse((cx + d * 200 - 130, cy - 400, cx + d * 200 + 130, cy - 140), col)
+    c.ellipse((cx - 360, cy - 230, cx + 360, cy + 200), col)
+    eyes(c, cx, cy - 280, 85, 200)
+    c.arc((cx - 230, cy - 160, cx + 230, cy + 90), 20, 160, (40, 90, 40), 16)
+    for d in (-1, 1):
+        c.ellipse((cx + d * 230 - 50, cy - 60, cx + d * 230 + 50, cy - 10), (255, 150, 150))
+    flower(c, 1350, 300, 70, (255, 214, 10))
+    c.save("k_frog.webp")
+
+
+def ladybug():
+    c = Canvas((0, 0, 0))
+    c.gradient((200, 240, 160), (150, 215, 110))
+    for k in range(9):
+        x = 100 + k * 180
+        c.line([(x, H), (x + 30, 980)], (90, 170, 60), 22)
+    cx, cy = 800, 620
+    c.ellipse((cx - 420, cy - 380, cx + 420, cy + 420), (80, 175, 60))
+    c.ellipse((cx - 330, cy - 320, cx + 330, cy + 340), None, shadow=True)
+    c.flush_shadow(off=14, blur=14, alpha=0.25)
+    c.ellipse((cx - 170, cy - 420, cx + 170, cy - 140), (40, 40, 50))
+    for d in (-1, 1):
+        c.line([(cx + d * 70, cy - 380), (cx + d * 170, cy - 520)], (40, 40, 50), 14)
+        c.ellipse((cx + d * 170 - 26, cy - 546, cx + d * 170 + 26, cy - 494), (40, 40, 50))
+    eyes(c, cx, cy - 310, 42, 75)
+    c.ellipse((cx - 330, cy - 320, cx + 330, cy + 340), (230, 40, 50))
+    c.line([(cx, cy - 300), (cx, cy + 330)], (40, 40, 50), 14)
+    for x, y, r in [(-180, -120, 70), (180, -120, 70), (-200, 120, 60), (200, 120, 60), (-90, 250, 45), (90, 250, 45)]:
+        c.ellipse((cx + x - r, cy + y - r, cx + x + r, cy + y + r), (40, 40, 50))
+    c.ellipse((cx - 220, cy - 260, cx - 120, cy - 180), (255, 120, 120))
+    c.save("k_ladybug.webp")
+
+
+def owl():
+    c = Canvas((0, 0, 0))
+    c.gradient((40, 50, 110), (90, 70, 150))
+    c.ellipse((1180, 90, 1440, 350), (255, 240, 170))
+    import random
+    rnd = random.Random(9)
+    for _ in range(50):
+        x, y, r = rnd.uniform(0, W), rnd.uniform(0, 700), rnd.uniform(2, 5)
+        c.ellipse((x - r, y - r, x + r, y + r), (255, 255, 230))
+    c.rrect((0, 960, W, 1040), 40, (140, 90, 50))
+    col = (170, 110, 70)
+    cx, cy = 800, 600
+    c.ellipse((cx - 300, cy - 330, cx + 300, cy + 400), None, shadow=True)
+    c.flush_shadow(off=12, blur=14, alpha=0.3)
+    for d in (-1, 1):
+        c.poly([(cx + d * 260, cy - 200), (cx + d * 250, cy - 420), (cx + d * 110, cy - 280)], col)
+    c.ellipse((cx - 300, cy - 330, cx + 300, cy + 400), col)
+    c.ellipse((cx - 190, cy - 20, cx + 190, cy + 380), (235, 205, 160))
+    for k in range(3):
+        for j in range(3 - k % 2):
+            x = cx - 100 + j * 100 + (50 if k % 2 else 0)
+            y = cy + 90 + k * 80
+            c.arc((x - 30, y - 20, x + 30, y + 30), 20, 160, (180, 140, 100), 8)
+    for d in (-1, 1):
+        c.ellipse((cx + d * 120 - 115, cy - 250, cx + d * 120 + 115, cy - 20), (245, 225, 190))
+        c.d.pieslice(sc((cx + d * 260 - 110, cy - 40, cx + d * 260 + 110, cy + 330)), 90 if d < 0 else -90, 270 if d < 0 else 90, fill=darker(col, 0.85))
+    eyes(c, cx, cy - 135, 70, 120, white=False)
+    c.poly([(cx - 35, cy - 60), (cx + 35, cy - 60), (cx, cy + 10)], (255, 170, 30))
+    for d in (-1, 1):
+        for k in (-1, 0, 1):
+            c.ellipse((cx + d * 80 + k * 25 - 16, cy + 380, cx + d * 80 + k * 25 + 16, cy + 420), (255, 170, 30))
+    c.save("k_owl.webp")
+
+
+GENERATORS = {f.__name__: f for f in (shapes, numbers, abc, fruits, rainbow, sea, house, space, vehicles, colors,
+                                      count_cards, letter_cards, cat, frog, ladybug, owl)}
+
 os.makedirs(OUT, exist_ok=True)
-for fn in (shapes, numbers, abc, fruits, rainbow, sea, house, space, vehicles, colors):
-    fn()
-    print("ok", fn.__name__)
+for name in sys.argv[3:] or GENERATORS:
+    GENERATORS[name]()
+    print("ok", name)

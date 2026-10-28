@@ -23,6 +23,11 @@ data class PuzzleImage(
     val assetFile: String? = null,
     val file: File? = null,
     val author: String? = null,
+    /** Section of the Kids tab. */
+    val group: String? = null,
+    /** Words read aloud to children, in English and French. */
+    val say: String? = null,
+    val sayFr: String? = null,
 ) {
     val isUser get() = file != null
     val isKids get() = category == KIDS_CATEGORY
@@ -41,6 +46,9 @@ private data class CatalogEntry(
     val width: Int,
     val height: Int,
     val author: String? = null,
+    val group: String? = null,
+    val say: String? = null,
+    val sayFr: String? = null,
 )
 
 @Serializable
@@ -59,7 +67,10 @@ class PuzzleRepository(private val context: Context) {
 
     val builtIn: List<PuzzleImage> = context.assets.open("puzzles/catalog.json").use { stream ->
         json.decodeFromString<List<CatalogEntry>>(stream.readBytes().decodeToString()).map {
-            PuzzleImage(it.id, it.title, it.category, it.width, it.height, assetFile = it.file, author = it.author)
+            PuzzleImage(
+                it.id, it.title, it.category, it.width, it.height,
+                assetFile = it.file, author = it.author, group = it.group, say = it.say, sayFr = it.sayFr,
+            )
         }
     }
 
