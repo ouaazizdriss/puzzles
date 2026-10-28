@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,13 +31,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Runs [block] only while this screen is the resumed one. A second tap on a back arrow lands while the
+ * screen is still animating out; without this it popped the home screen too and left a blank window.
+ */
+private inline fun NavBackStackEntry.ifResumed(block: () -> Unit) {
+    if (lifecycle.currentState == Lifecycle.State.RESUMED) block()
+}
+
 @Composable
 private fun AppNavigation() {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = "home") {
-        composable("home") {
+        composable("home") { entry ->
             HomeScreen(
-                onOpen = { id -> nav.navigate("setup/$id") },
+                onOpen = { id -> entry.ifResumed { nav.navigate("setup/$id") } },
+                // Photo picker results arrive before the screen resumes, so this one is not guarded.
                 onCrop = { uri -> nav.navigate("crop?uri=${Uri.encode(uri.toString())}") },
             )
         }
@@ -43,15 +54,15 @@ private fun AppNavigation() {
             val uri = Uri.parse(entry.arguments?.getString("uri").orEmpty())
             CropScreen(
                 uri = uri,
-                onBack = { nav.popBackStack() },
-                onSaved = { id -> nav.navigate("setup/$id") { popUpTo("home") } },
+                onBack = { entry.ifResumed { nav.popBackStack() } },
+                onSaved = { id -> entry.ifResumed { nav.navigate("setup/$id") { popUpTo("home") } } },
             )
         }
         composable("setup/{imageId}") { entry ->
             SetupScreen(
                 imageId = entry.arguments?.getString("imageId").orEmpty(),
-                onBack = { nav.popBackStack() },
-                onPlay = { id, target, resume -> nav.navigate("game/$id/$target/$resume") },
+                onBack = { entry.ifResumed { nav.popBackStack() } },
+                onPlay = { id, target, resume -> entry.ifResumed { nav.navigate("game/$id/$target/$resume") } },
             )
         }
         composable(
@@ -66,8 +77,8 @@ private fun AppNavigation() {
                 imageId = args.getString("imageId").orEmpty(),
                 target = args.getInt("target"),
                 resume = args.getBoolean("resume"),
-                onExit = { nav.popBackStack("home", inclusive = false) },
-                onBack = { nav.popBackStack() },
+                onExit = { entry.ifResumed { nav.popBackStack("home", inclusive = false) } },
+                onBack = { entry.ifResumed { nav.popBackStack() } },
             )
         }
     }
