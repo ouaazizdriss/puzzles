@@ -1,0 +1,218 @@
+[
+ {
+  "id": "builtin_1025",
+  "title": "Cozy pug",
+  "category": "animals",
+  "file": "p1025.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Matthew Wiebe"
+ },
+ {
+  "id": "builtin_1074",
+  "title": "Lioness",
+  "category": "animals",
+  "file": "p1074.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Samuel Scrimshaw"
+ },
+ {
+  "id": "builtin_1084",
+  "title": "Walruses",
+  "category": "animals",
+  "file": "p1084.webp",
+  "width": 1600,
+  "height": 1143,
+  "author": "Jay Ruzesky"
+ },
+ {
+  "id": "builtin_237",
+  "title": "Black puppy",
+  "category": "animals",
+  "file": "p237.webp",
+  "width": 1600,
+  "height": 958,
+  "author": "Andr\u00e9 Spieker"
+ },
+ {
+  "id": "builtin_593",
+  "title": "Tiger",
+  "category": "animals",
+  "file": "p593.webp",
+  "width": 1200,
+  "height": 1600,
+  "author": "Paula Borowska"
+ },
+ {
+  "id": "builtin_1069",
+  "title": "Jellyfish",
+  "category": "animals",
+  "file": "p1069.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Marat Gilyadzinov"
+ },
+ {
+  "id": "builtin_82",
+  "title": "Cherry blossom",
+  "category": "nature",
+  "file": "p82.webp",
+  "width": 1600,
+  "height": 1063,
+  "author": "Rula Sibai"
+ },
+ {
+  "id": "builtin_152",
+  "title": "Petunias",
+  "category": "nature",
+  "file": "p152.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Steven Spassov"
+ },
+ {
+  "id": "builtin_1080",
+  "title": "Strawberries",
+  "category": "nature",
+  "file": "p1080.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "veeterzy"
+ },
+ {
+  "id": "builtin_189",
+  "title": "Raindrops on a leaf",
+  "category": "nature",
+  "file": "p189.webp",
+  "width": 1600,
+  "height": 1200,
+  "author": "Buzo Jes\u00fas"
+ },
+ {
+  "id": "builtin_106",
+  "title": "Red blossoms",
+  "category": "nature",
+  "file": "p106.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Arvee Marie"
+ },
+ {
+  "id": "builtin_75",
+  "title": "Grapes",
+  "category": "nature",
+  "file": "p75.webp",
+  "width": 1067,
+  "height": 1600,
+  "author": "Jassy Onyae"
+ },
+ {
+  "id": "builtin_1043",
+  "title": "Valley river",
+  "category": "landscapes",
+  "file": "p1043.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Christian Joudrey"
+ },
+ {
+  "id": "builtin_1050",
+  "title": "Rocky coast",
+  "category": "landscapes",
+  "file": "p1050.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Joseph Barrientos"
+ },
+ {
+  "id": "builtin_15",
+  "title": "Waterfall",
+  "category": "landscapes",
+  "file": "p15.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Paul Jarvis"
+ },
+ {
+  "id": "builtin_116",
+  "title": "Tuscan hills",
+  "category": "landscapes",
+  "file": "p116.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Anton Sulsky"
+ },
+ {
+  "id": "builtin_29",
+  "title": "Mountain range",
+  "category": "landscapes",
+  "file": "p29.webp",
+  "width": 1600,
+  "height": 1068,
+  "author": "Go Wild"
+ },
+ {
+  "id": "builtin_206",
+  "title": "Golden sunset",
+  "category": "landscapes",
+  "file": "p206.webp",
+  "width": 1600,
+  "height": 1000,
+  "author": "Philipp Reiner"
+ },
+ {
+  "id": "builtin_1040",
+  "title": "Fairytale castle",
+  "category": "places",
+  "file": "p1040.webp",
+  "width": 1600,
+  "height": 1068,
+  "author": "Rachel Davis"
+ },
+ {
+  "id": "builtin_49",
+  "title": "Santorini",
+  "category": "places",
+  "file": "p49.webp",
+  "width": 1600,
+  "height": 990,
+  "author": "Margaret Barley"
+ },
+ {
+  "id": "builtin_164",
+  "title": "Canal houses",
+  "category": "places",
+  "file": "p164.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Linh Nguyen"
+ },
+ {
+  "id": "builtin_43",
+  "title": "Brooklyn Bridge",
+  "category": "places",
+  "file": "p43.webp",
+  "width": 1600,
+  "height": 1039,
+  "author": "Oleg Chursin"
+ },
+ {
+  "id": "builtin_1067",
+  "title": "City skyline",
+  "category": "places",
+  "file": "p1067.webp",
+  "width": 1600,
+  "height": 1067,
+  "author": "Kevin Young"
+ },
+ {
+  "id": "builtin_163",
+  "title": "Corner caf\u00e9",
+  "category": "places",
+  "file": "p163.webp",
+  "width": 1600,
+  "height": 1066,
+  "author": "Linh Nguyen"
+ }
+]
