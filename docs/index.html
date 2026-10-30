@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Puzzles for Android</title>
+<meta name="description" content="Puzzles is an offline jigsaw app for Android phones and tablets: 24 photo puzzles, 37 Kids puzzles, or any photo cut into 9 to 150 classic tab-and-blank pieces. Free APK and source on GitHub.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Puzzles for Android">
+<meta property="og:description" content="Jigsaw puzzles with pieces cut like real ones. 24 photo puzzles, 37 for kids, or your own photo, 9 to 150 pieces, offline.">
+<meta property="og:url" content="https://ouaazizdriss.github.io/puzzles/">
+<meta property="og:image" content="https://ouaazizdriss.github.io/puzzles/img/s_land.webp">
+<meta name="theme-color" content="#2B2D31">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='8 2 56 56'%3E%3Cpath fill='%234A55C8' d='M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Figtree:wght@400..700&family=Spline+Sans+Mono:wght@400..600&display=swap">
+<style>
+/* Layout: the puzzle box. The hero is the lid with the picture on it, sections are the printed box
+   sides, and every band is joined to the next by a jigsaw cut drawn with the app's own edge function. */
+:root {
+  --table: #ECE6DA; --sheet: #F8F4EC; --ink: #1D1F22; --sub: #595D64; --rule: #D5CCBC; --rule-ink: #1D1F22;
+  --accent: #4A55C8; --accent-ink: #ffffff; --accent-soft: #E2E4F7; --amber: #9A5A00; --star: #FFB300; --hint: #FFD54F;
+  --teal: #00796B; --felt: #2B2D31; --card: #ffffff; --shadow: 0 1px 0 rgba(0,0,0,.04), 0 12px 32px -18px rgba(40,30,10,.35);
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --col: 1200px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --table: #151619; --sheet: #212328; --ink: #EDE9E1; --sub: #A9A59D; --rule: #34363C; --rule-ink: #EDE9E1;
+  --accent: #BAC3FF; --accent-ink: #14183A; --accent-soft: #262B4D; --amber: #FFB68A; --teal: #80CBC4; --card: #24262B;
+  --shadow: 0 1px 0 rgba(255,255,255,.03), 0 14px 34px -18px rgba(0,0,0,.8); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --table: #151619; --sheet: #212328; --ink: #EDE9E1; --sub: #A9A59D; --rule: #34363C; --rule-ink: #EDE9E1;
+  --accent: #BAC3FF; --accent-ink: #14183A; --accent-soft: #262B4D; --amber: #FFB68A; --teal: #80CBC4; --card: #24262B;
+  --shadow: 0 1px 0 rgba(255,255,255,.03), 0 14px 34px -18px rgba(0,0,0,.8); color-scheme: dark }
+
+* { box-sizing: border-box }
+html { -webkit-text-size-adjust: 100% }
+body { margin: 0; background: var(--table); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55; overflow-x: hidden }
+img { max-width: 100%; display: block }
+a { color: var(--accent) }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; font-weight: 600 }
+h1 { font-size: clamp(42px, 6.4vw, 84px); line-height: .98; letter-spacing: -0.025em; font-variation-settings: "opsz" 144 }
+h2 { font-size: clamp(32px, 4.2vw, 54px); line-height: 1.02; letter-spacing: -0.02em; font-variation-settings: "opsz" 120 }
+h3 { font-size: 21px; line-height: 1.2; letter-spacing: -0.01em; font-variation-settings: "opsz" 36 }
+p { margin: 0; max-width: 64ch }
+.lede { font-size: 19.5px; color: var(--sub); line-height: 1.5 }
+.mono, code, kbd { font-family: var(--mono); font-size: .84em }
+[id] { scroll-margin-top: 72px }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+
+.band { position: relative; padding: 84px max(16px, env(safe-area-inset-right, 0px)) 92px max(16px, env(safe-area-inset-left, 0px)) }
+.band.sheet { background: var(--sheet) }
+.wrap { max-width: var(--col); margin: 0 auto; display: flex; flex-direction: column; gap: 44px; min-width: 0 }
+
+/* The jigsaw cut between two bands. Drawn by cutDivider() with the app's edge function. */
+.cut { height: 64px; margin: -32px 0; position: relative; z-index: 2; pointer-events: none }
+.cut svg { display: block; width: 100%; height: 64px; overflow: visible }
+.cut path { fill: var(--to); stroke: none }
+.cut.to-sheet { --to: var(--sheet) } .cut.to-table { --to: var(--table) }
+
+/* Box-side section heads: a numbered piece, a label in mono, then the title */
+.head { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: 18px 56px; align-items: end }
+@media (max-width: 900px) { .head { grid-template-columns: minmax(0, 1fr) } }
+.side { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--sub) }
+.side .pc { width: 34px; height: 34px; flex: none; position: relative; color: var(--accent) }
+.side .pc svg { width: 100%; height: 100% }
+.side .pc b { position: absolute; left: 4px; right: 10px; bottom: 4px; top: 10px; display: grid; place-items: center; font-size: 11px; color: var(--accent-ink); letter-spacing: 0; font-weight: 600 }
+.side::after { content: ""; flex: 1; border-top: 1px dashed var(--rule) }
+
+/* Top bar */
+.top { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--table) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--rule); padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)) }
+.top .in { max-width: var(--col); margin: 0 auto; height: 58px; display: flex; align-items: center; gap: 22px }
+.word { display: flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font-family: var(--display); font-weight: 650; font-size: 23px; letter-spacing: -0.02em }
+.word svg { width: 26px; height: 26px; color: var(--accent) }
+.nav { margin-left: auto; display: flex; gap: 20px; font-size: 15px }
+.nav a { color: var(--sub); text-decoration: none } .nav a:hover { color: var(--ink) }
+@media (max-width: 860px) { .nav { display: none } }
+.tbtn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1px solid var(--rule); border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer }
+.tbtn svg { width: 18px; height: 18px }
+@media (max-width: 860px) { .tbtn { margin-left: auto } }
+.ghl { font-family: var(--mono); font-size: 12.5px; color: var(--ink); text-decoration: none; border: 1px solid var(--rule-ink); padding: 7px 11px; border-radius: 999px; white-space: nowrap }
+.ghl:hover { background: var(--ink); color: var(--table) }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; font: 600 16px/1 var(--body); padding: 15px 20px; border-radius: 999px; text-decoration: none; border: 1.5px solid var(--rule-ink); color: var(--ink); background: transparent; cursor: pointer }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink) }
+.btn.primary:hover { filter: brightness(1.08) }
+.btn:not(.primary):hover { background: var(--ink); color: var(--table) }
+.btn small { font: 500 12px var(--mono); opacity: .8 }
+.btn svg { width: 18px; height: 18px; flex: none }
+
+/* Hero: the lid */
+.hero { padding-top: 56px; padding-bottom: 70px }
+.lid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; align-items: start }
+@media (max-width: 1020px) { .lid { grid-template-columns: minmax(0, 1fr); gap: 34px } }
+.lid-text { display: flex; flex-direction: column; gap: 26px; padding-top: 18px }
+.eyebrow { font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--amber) }
+.h1-em { font-style: italic; font-weight: 500; color: var(--accent) }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px }
+.boxspec { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--rule-ink); border-bottom: 1px solid var(--rule) }
+.boxspec div { padding: 12px 12px 12px 0; font-size: 14px; color: var(--sub); line-height: 1.35 }
+.boxspec div + div { padding-left: 14px; border-left: 1px solid var(--rule) }
+.boxspec b { display: block; font-family: var(--display); font-weight: 600; font-size: 22px; color: var(--ink); letter-spacing: -0.01em }
+
+/* The playable demo */
+.play { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; min-width: 0 }
+.play-bar { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--rule); min-width: 0 }
+.play-bar .t { font-weight: 650; font-size: 16px; line-height: 1.2; min-width: 0 }
+.play-bar .t small { display: block; font: 500 12.5px var(--mono); color: var(--sub); margin-top: 2px; white-space: nowrap }
+.play-bar .tools { margin-left: auto; display: flex; gap: 6px; flex: none }
+.ib { width: 40px; height: 40px; border-radius: 50%; border: 1px solid transparent; background: transparent; color: var(--ink); display: inline-grid; place-items: center; cursor: pointer }
+.ib:hover { background: var(--accent-soft) }
+.ib[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent) }
+.ib svg { width: 21px; height: 21px }
+.stage { position: relative; background: var(--felt); touch-action: none; user-select: none; -webkit-user-select: none }
+.stage canvas { display: block; width: 100%; cursor: grab }
+.stage canvas.dragging { cursor: grabbing }
+.done { position: absolute; inset: 0; display: none; place-items: center; background: rgba(10,10,14,.55); padding: 16px }
+.done.on { display: grid }
+.done .card { background: var(--card); color: var(--ink); border-radius: 22px; padding: 26px 26px 20px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.4) }
+.done h3 { font-size: 34px; margin-bottom: 6px }
+.done .star { width: 64px; height: 64px; margin: 12px auto 4px; color: var(--star) }
+.done p { margin: 0 auto 4px; color: var(--sub); font-size: 15.5px }
+.done .row { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap }
+.done .btn { padding: 11px 16px; font-size: 15px }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 22px; padding: 16px 16px 18px; border-top: 1px solid var(--rule) }
+@media (max-width: 560px) { .controls { grid-template-columns: minmax(0, 1fr) } }
+.ctl { display: flex; flex-direction: column; gap: 7px; min-width: 0 }
+.ctl > span { font: 500 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--sub) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { font: 600 14px var(--body); padding: 7px 12px; border-radius: 9px; border: 1px solid var(--rule); background: transparent; color: var(--ink); cursor: pointer; min-height: 36px }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink) }
+.chip:disabled { opacity: .45; cursor: default }
+label.chip { display: inline-flex; align-items: center }
+label.chip input { position: absolute; opacity: 0; width: 1px; height: 1px }
+label.chip:focus-within { outline: 3px solid var(--accent); outline-offset: 2px }
+.swatches { display: flex; gap: 8px; align-items: center }
+.sw { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--rule); cursor: pointer; padding: 0 }
+.sw[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--card) inset }
+input[type="range"] { width: 100%; accent-color: var(--accent) }
+.ctl .hint-note { font-size: 13px; color: var(--sub) }
+.port-note { font-size: 13.5px; color: var(--sub); padding: 0 16px 16px; line-height: 1.45 }
+.port-note code { color: var(--ink) }
+
+/* Facts strip */
+.facts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 2px solid var(--rule-ink) }
+@media (max-width: 1020px) { .facts { grid-template-columns: repeat(3, minmax(0, 1fr)) } }
+@media (max-width: 560px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.fact { padding: 16px 16px 18px 0; border-bottom: 1px solid var(--rule); min-width: 0 }
+.fact .k { font: 500 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--sub) }
+.fact .v { font-family: var(--display); font-size: clamp(40px, 4.4vw, 58px); line-height: 1; letter-spacing: -0.03em; margin: 10px 0 8px; font-variation-settings: "opsz" 144 }
+.fact p { font-size: 14px; color: var(--sub); line-height: 1.4 }
+
+/* The cut */
+.cutgrid { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 40px; align-items: start }
+@media (max-width: 960px) { .cutgrid { grid-template-columns: minmax(0, 1fr) } }
+.edgebox { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden }
+.edgebox svg { display: block; width: 100%; height: auto; background: var(--sheet) }
+.edgebox .bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--rule); align-items: center }
+.edgebox .bar .sp { margin-left: auto; font: 500 12.5px var(--mono); color: var(--sub) }
+.ptab { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px }
+.ptab th, .ptab td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--rule) }
+.ptab th:first-child, .ptab td:first-child { text-align: left }
+.ptab th { font-weight: 500; color: var(--sub) }
+.notes { display: flex; flex-direction: column; gap: 22px }
+.note h3 { margin-bottom: 6px }
+.note p { color: var(--sub); font-size: 16px }
+pre.code { margin: 0; border: 1px solid var(--rule); background: #1B1C20; color: #E6E3DC; border-radius: 14px; padding: 16px 18px; overflow-x: auto; font: 13px/1.6 var(--mono) }
+pre.code .c { color: #8E8B84 } pre.code .k { color: #BAC3FF } pre.code .n { color: #FFCF8A }
+
+/* Feature cards and screenshots */
+.shots { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.3fr); gap: 32px; align-items: start }
+.rightcol { display: flex; flex-direction: column; gap: 30px; min-width: 0 }
+.traytext h3 { font-size: 24px; margin-bottom: 6px } .traytext p { color: var(--sub); font-size: 15.5px; margin-bottom: 14px; max-width: none }
+@media (max-width: 860px) { .shots .phone, .kidsgrid .phone { max-width: 300px } .shots figure:first-child { align-items: flex-start } }
+@media (max-width: 860px) { .shots { grid-template-columns: minmax(0, 1fr) } }
+figure { margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+figcaption { font-size: 14px; color: var(--sub); line-height: 1.4 }
+figcaption b { color: var(--ink); font-weight: 600 }
+.phone { border-radius: 26px; border: 7px solid #111214; background: #111214; overflow: hidden; box-shadow: var(--shadow); aspect-ratio: 600 / 1233 }
+.phone img { width: 100%; height: 100%; object-fit: cover }
+.land { border-radius: 22px; border: 7px solid #111214; background: #111214; overflow: hidden; box-shadow: var(--shadow); aspect-ratio: 1400 / 548 }
+.land img { width: 100%; height: 100%; object-fit: cover }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--rule-ink) }
+@media (max-width: 960px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 560px) { .cards { grid-template-columns: minmax(0, 1fr) } }
+.cardf { padding: 20px 22px 22px 0; border-bottom: 1px solid var(--rule); min-width: 0 }
+.cardf h3 { font-size: 19px; margin-bottom: 6px }
+.cardf p { font-size: 15.5px; color: var(--sub) }
+.cardf .m { display: inline-block; margin-top: 8px; font: 500 12px var(--mono); color: var(--amber) }
+
+/* Tray sort mini demo */
+.tray { background: var(--felt); border-radius: 16px; overflow: hidden; border: 1px solid var(--rule) }
+.tray canvas { display: block; width: 100%; height: auto }
+.traybar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px }
+.traybar .sp { font-size: 14px; color: var(--sub); margin-left: auto; max-width: 52ch }
+@media (max-width: 700px) { .traybar .sp { margin-left: 0 } }
+
+/* Kids */
+.kidsgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px }
+@media (max-width: 960px) { .kidsgrid { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.cmp { width: 100%; border-collapse: collapse; font-size: 15.5px }
+.cmp th, .cmp td { text-align: left; padding: 11px 10px 11px 0; border-bottom: 1px solid var(--rule); vertical-align: top }
+.cmp thead th { font: 500 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--sub); border-bottom: 2px solid var(--rule-ink) }
+.cmp td:first-child { color: var(--sub); width: 34% }
+.cmp td.kid { color: var(--ink); font-weight: 600 }
+.split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 44px; align-items: start }
+@media (max-width: 960px) { .split { grid-template-columns: minmax(0, 1fr) } }
+.words { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px }
+@media (max-width: 700px) { .words { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.wordc { background: var(--card); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; min-width: 0 }
+.wordc img { aspect-ratio: 4 / 3; width: 100%; height: auto; object-fit: cover }
+.wordc .wb { padding: 10px 12px 12px; display: flex; gap: 8px; align-items: center; min-width: 0 }
+.wordc .wt { min-width: 0; flex: 1 }
+.wordc .wt b { display: block; font-size: 15px; line-height: 1.2 }
+.wordc .wt span { display: block; font: 500 12px var(--mono); color: var(--sub); line-height: 1.35; margin-top: 2px }
+.say { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--rule); background: transparent; color: var(--ink); display: grid; place-items: center; cursor: pointer }
+.say svg { width: 18px; height: 18px }
+.say:hover { background: var(--accent-soft) }
+.langs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap }
+.lockdemo { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; box-shadow: var(--shadow) }
+.lockdemo h3 { font-size: 24px }
+.lockdemo p { color: var(--sub); font-size: 15px }
+.hold { position: relative; width: 112px; height: 112px; border-radius: 50%; border: none; background: var(--accent-soft); color: var(--accent); cursor: pointer; display: grid; place-items: center; touch-action: none; user-select: none; -webkit-user-select: none }
+.hold svg.ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg) }
+.hold svg.ring circle { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round }
+.hold span { font: 650 17px var(--body); position: relative }
+.lockstate { font: 500 13px var(--mono); color: var(--sub); min-height: 1.4em }
+
+/* Photos */
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--rule-ink); counter-reset: s }
+@media (max-width: 860px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 480px) { .steps { grid-template-columns: minmax(0, 1fr) } }
+.step { padding: 18px 20px 20px 0; border-bottom: 1px solid var(--rule); counter-increment: s; min-width: 0 }
+.step::before { content: counter(s, decimal-leading-zero); font: 500 12px var(--mono); color: var(--amber) }
+.step h3 { font-size: 19px; margin: 6px 0 6px }
+.step p { font-size: 15.5px; color: var(--sub) }
+
+/* Architecture */
+.arch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; position: relative }
+@media (max-width: 900px) { .arch { grid-template-columns: minmax(0, 1fr) } }
+.layer { background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; position: relative }
+.layer > .lh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px }
+.layer > .lh h3 { font-size: 20px }
+.layer > .lh span { font: 500 11.5px var(--mono); color: var(--sub); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap }
+.layer > p { font-size: 14.5px; color: var(--sub) }
+.mods { display: flex; flex-direction: column; gap: 6px }
+.mod { border: 1px dashed var(--rule); border-radius: 10px; padding: 8px 10px; font-size: 14px; line-height: 1.35; min-width: 0 }
+.mod code { color: var(--ink); font-weight: 500; overflow-wrap: anywhere }
+.mod small { display: block; color: var(--sub); font-size: 13px }
+.layer.engine { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset }
+.flow { display: none }
+@media (min-width: 901px) { .layer:not(:last-child)::after { content: "→"; position: absolute; right: -16px; top: 22px; font: 600 16px var(--mono); color: var(--sub); z-index: 1 } }
+.twocol { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start }
+@media (max-width: 900px) { .twocol { grid-template-columns: minmax(0, 1fr) } }
+.tests { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--rule-ink) }
+.tests li { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--rule); font: 13px var(--mono); min-width: 0 }
+.tests li span { color: var(--sub); flex: none; width: 9.5em }
+.tests li code { overflow-wrap: anywhere; font-size: 1em }
+
+/* Releases */
+.rel { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--rule-ink) }
+@media (max-width: 960px) { .rel { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 520px) { .rel { grid-template-columns: minmax(0, 1fr) } }
+.rel li { padding: 18px 20px 20px 0; border-bottom: 1px solid var(--rule); min-width: 0 }
+.rel .v { font-family: var(--display); font-size: 30px; letter-spacing: -0.02em }
+.rel .d { font: 500 12px var(--mono); color: var(--sub); margin: 2px 0 10px }
+.rel p { font-size: 15px; color: var(--sub) }
+.rel li.cur .v { color: var(--accent) }
+
+/* Install */
+.inst { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px }
+@media (max-width: 900px) { .inst { grid-template-columns: minmax(0, 1fr) } }
+.ibox { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow); min-width: 0 }
+.ibox ol { margin: 0; padding-left: 20px; color: var(--sub); display: flex; flex-direction: column; gap: 6px; font-size: 15.5px }
+.ibox ol b { color: var(--ink) }
+
+footer { background: var(--sheet); padding: 56px max(16px, env(safe-area-inset-right, 0px)) 60px max(16px, env(safe-area-inset-left, 0px)) }
+footer .wrap { gap: 26px }
+.credits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; font-size: 14.5px; color: var(--sub) }
+@media (max-width: 860px) { .credits { grid-template-columns: minmax(0, 1fr) } }
+.credits b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px }
+.foot { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; border-top: 2px solid var(--rule-ink); padding-top: 18px; font-size: 14.5px }
+.foot a { color: var(--ink) }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important } }
+</style>
+</head>
+<body>
+<a class="sr" href="#main">Skip to content</a>
+<header class="top">
+  <div class="in">
+    <a class="word" href="#top" aria-label="Puzzles, back to top"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg>Puzzles</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#cut">The cut</a><a href="#table">On the table</a><a href="#kids">Kids</a><a href="#photos">Your photos</a><a href="#inside">Inside</a><a href="#install">Install</a>
+    </nav>
+    <button class="tbtn" id="theme" type="button" aria-label="Switch to dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    <a class="ghl" href="https://github.com/ouaazizdriss/puzzles">GitHub</a>
+  </div>
+</header>
+
+<main id="main">
+<section class="band hero" id="top" aria-labelledby="h1">
+  <div class="wrap">
+    <div class="lid">
+      <div class="lid-text">
+        <div class="eyebrow">Android 8.0+ · phones and tablets · version 1.2.0</div>
+        <h1 id="h1">Jigsaw puzzles with pieces <span class="h1-em">cut like real ones.</span></h1>
+        <p class="lede">Puzzles cuts a picture into 9 to 150 classic tab-and-blank pieces. Play one of 24 photos, one of 37 Kids pictures, or any photo from your gallery or camera. It works offline, with no account and no ads.</p>
+        <div class="ctas">
+          <a class="btn primary" href="https://github.com/ouaazizdriss/puzzles/releases/download/v1.2.0/puzzles-1.2.0.apk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download APK <small>9.0 MB</small></a>
+          <a class="btn" href="https://github.com/ouaazizdriss/puzzles">Source on GitHub</a>
+        </div>
+        <div class="boxspec" aria-label="On the box">
+          <div><b>9–150</b>pieces per puzzle, 4–16 in Kids</div>
+          <div><b>61</b>pictures bundled in the app</div>
+          <div><b>0</b>system permissions asked for</div>
+        </div>
+      </div>
+
+      <div class="play" id="play" aria-label="Playable demo">
+        <div class="play-bar">
+          <div class="t"><span id="pTitle">Fairytale castle</span><small id="pStatus">0/15 · 0:00</small></div>
+          <div class="tools">
+            <button class="ib" id="bHint" type="button" aria-label="Hint: show a piece and where it goes" title="Hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg></button>
+            <button class="ib" id="bSpread" type="button" aria-label="Spread pieces on the table" title="Spread pieces on the table"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="8" height="8" rx="1"/><rect x="2" y="2" width="4" height="4" rx=".5"/><rect x="18" y="2" width="4" height="4" rx=".5"/><rect x="2" y="18" width="4" height="4" rx=".5"/><rect x="18" y="18" width="4" height="4" rx=".5"/></svg></button>
+            <button class="ib" id="bSound" type="button" aria-pressed="true" aria-label="Sound" title="Sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="w" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <canvas id="board" role="img" aria-label="Jigsaw board. Drag the pieces into the frame."></canvas>
+          <div class="done" id="done" aria-live="polite">
+            <div class="card">
+              <h3 id="dTitle">Well done!</h3>
+              <p id="dLine">You finished the puzzle!</p>
+              <svg class="star" id="dStar" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.2 6.6.7-5 4.5 1.4 6.6L12 17.2l-5.9 3.3 1.4-6.6-5-4.5 6.6-.7z"/></svg>
+              <p id="dStats"></p>
+              <div class="row"><button class="btn primary" id="dAgain" type="button">Play again</button><button class="btn" id="dClose" type="button">Close</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="ctl"><span id="lMode">Mode</span>
+            <div class="chips" role="group" aria-labelledby="lMode"><button class="chip" type="button" data-mode="std" aria-pressed="true">Standard</button><button class="chip" type="button" data-mode="kids" aria-pressed="false">Kids</button></div>
+          </div>
+          <div class="ctl"><span id="lPic">Picture</span>
+            <div class="chips" role="group" aria-labelledby="lPic">
+              <button class="chip" type="button" data-pic="castle" aria-pressed="true">Castle</button><button class="chip" type="button" data-pic="owl" aria-pressed="false">Owl</button><button class="chip" type="button" data-pic="sea" aria-pressed="false">Sea</button><label class="chip" id="ownLbl">Your photo<input type="file" id="own" accept="image/*"></label>
+            </div>
+          </div>
+          <div class="ctl"><span id="lPieces">Pieces</span><div class="chips" id="pieceChips" role="group" aria-labelledby="lPieces"></div><span class="hint-note" id="gridNote" style="text-transform:none;letter-spacing:0;font-family:var(--body)"></span></div>
+          <div class="ctl"><span><label for="ghost">Picture under the pieces</label></span><input type="range" id="ghost" min="0" max="1" step="0.05" value="0.3">
+            <div class="swatches" role="group" aria-label="Table color" id="swatches"></div>
+          </div>
+        </div>
+        <p class="port-note">This board runs the app's cutting and joining code, ported line by line from <code>PuzzleCut.kt</code>, <code>PieceRenderer.kt</code> and <code>GameViewModel.dropGroup</code> to JavaScript. Drag a piece near a neighbour and they join; drop a group near its spot and it locks in. Your photo stays in this browser tab.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cut to-sheet" data-seed="11" aria-hidden="true"></div>
+<section class="band sheet" aria-label="Numbers">
+  <div class="wrap">
+    <div class="facts">
+      <div class="fact"><div class="k">Photo puzzles</div><div class="v">24</div><p>Animals, Nature, Landscapes, Places: 6 each, counted in <code>catalog.json</code>.</p></div>
+      <div class="fact"><div class="k">Kids puzzles</div><div class="v">37</div><p>10 pictures, 4 animals, 10 numbers, 8 letters, 5 photos.</p></div>
+      <div class="fact"><div class="k">Piece sizes</div><div class="v">6</div><p>9, 16, 36, 64, 100, 150 targets, plus 5 Kids sizes from 4 to 16.</p></div>
+      <div class="fact"><div class="k">Permissions</div><div class="v">0</div><p>No internet, camera or storage permission in the 1.2.0 APK (read with <code>aapt2</code>).</p></div>
+      <div class="fact"><div class="k">Engine tests</div><div class="v">13</div><p>JUnit tests for the cut and the grid, in 2 files.</p></div>
+      <div class="fact"><div class="k">Kotlin</div><div class="v">3,220</div><p>Lines in 19 source files, one activity, Jetpack Compose.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="cut to-table" data-seed="23" aria-hidden="true"></div>
+<section class="band" id="cut" aria-labelledby="h-cut">
+  <div class="wrap">
+    <div class="head">
+      <div class="side"><span class="pc"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg><b>1</b></span>The cut · engine/PuzzleCut.kt</div>
+      <h2 id="h-cut">Every edge is cut once and shared by two pieces.</h2>
+      <p class="lede">Each inner edge is ten points and three Bézier curves, with a random tab direction and a little jitter. The piece on one side walks it forwards, the piece on the other side walks it backwards, so the two always fit.</p>
+    </div>
+    <div class="cutgrid">
+      <div class="edgebox">
+        <svg id="edgeSvg" viewBox="40 0 480 390" role="img" aria-label="One shared edge between an upper and a lower piece, with its ten control points"></svg>
+        <div class="bar">
+          <button class="chip" type="button" id="eNew">New edge</button>
+          <button class="chip" type="button" id="eFlip">Flip tab</button>
+          <button class="chip" type="button" id="eJit" aria-pressed="true">Jitter</button>
+          <button class="chip" type="button" id="ePts" aria-pressed="true">Control points</button>
+          <span class="sp" id="eSeed"></span>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="note"><h3>Knobs in units of the cell</h3><p>Offsets are multiples of <code>unit = min(cellW, cellH)</code>, so knobs stay round on cells that are not square. <code>TAB = 0.1</code> sets the knob size and <code>JITTER = 0.035</code> moves five of the points so no two pieces look the same.</p></div>
+        <table class="ptab" aria-label="Control points of the edge above, in units">
+          <thead><tr><th>point</th><th>along ÷ length</th><th>offset ÷ unit</th></tr></thead>
+          <tbody id="ptBody"></tbody>
+        </table>
+        <div class="note"><h3>One seed rebuilds the whole puzzle</h3><p>The edges come from <code>Random(seed)</code>. A saved game stores the grid, the seed and where each piece lies, never a bitmap, and the same shapes come back on resume. Each piece is rendered once into a bitmap padded by <code>0.355 × unit</code>, the furthest a control point can reach.</p></div>
+      </div>
+    </div>
+    <pre class="code" aria-label="Excerpt from PuzzleCut.kt"><span class="c">// (distance along the edge, offset from the edge) for p0..p9, from PuzzleCut.edge()</span>
+<span class="k">val</span> pts = floatArrayOf(
+    <span class="n">0f</span>, <span class="n">0f</span>,
+    <span class="n">0.2f</span> * length, a * u,
+    half + (b + d) * u, (-t + c) * u,
+    half + (-t + b) * u, (t + c) * u,
+    half + (<span class="n">-2</span> * t + b - d) * u, (<span class="n">3</span> * t + c) * u,
+    half + (<span class="n">2</span> * t + b - d) * u, (<span class="n">3</span> * t + c) * u,
+    half + (t + b) * u, (t + c) * u,
+    half + (b + d) * u, (-t + c) * u,
+    <span class="n">0.8f</span> * length, e * u,
+    length, <span class="n">0f</span>,
+)</pre>
+  </div>
+</section>
+
+<div class="cut to-sheet" data-seed="37" aria-hidden="true"></div>
+<section class="band sheet" id="table" aria-labelledby="h-table">
+  <div class="wrap">
+    <div class="head">
+      <div class="side"><span class="pc"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg><b>2</b></span>On the table · ui/game</div>
+      <h2 id="h-table">Pieces join on the table, like a real jigsaw.</h2>
+      <p class="lede">Drop a piece next to its neighbour and the two move as one group from then on. Drop a group near its place in the frame and the whole group locks in. The table tools are there for the big puzzles.</p>
+    </div>
+    <div class="shots">
+      <figure><div class="phone"><img src="img/s_spread.webp" alt="Phone screenshot: 35 castle pieces spread above and below an empty frame on a dark table" width="600" height="1233" loading="lazy"></div><figcaption><b>Spread pieces on the table</b>, phone in portrait: more rows above and below the frame.</figcaption></figure>
+      <div class="rightcol"><figure><div class="land"><img src="img/s_land.webp" alt="Landscape screenshot: the same 35 pieces spread left and right of the frame, with the tray on the side" width="1400" height="548" loading="lazy"></div><figcaption><b>The same game turned sideways.</b> The tray moves to the side and spreading again lays the pieces out in rings shaped like the screen. Screenshots from the 1.2.0 APK on an Android 16 emulator.</figcaption></figure>
+      <div class="traydemo">
+      <div class="traytext"><h3>Try the tray sort on the board's pieces.</h3><p>These are the pieces of the puzzle on the board at the top, rendered by the same port. The sort keys are the app's: <code>edgeRank</code> for edges first, and for color, the hue of each piece's average color, with greys after the colors from light to dark.</p></div>
+      <div class="tray"><canvas id="trayCv" aria-label="The pieces of the current puzzle in a tray" role="img"></canvas></div>
+      <div class="traybar">
+        <button class="chip" type="button" data-sort="edges">Sort: edges first</button>
+        <button class="chip" type="button" data-sort="color" id="sortColor">Sort: by color</button>
+        <button class="chip" type="button" data-sort="shuffle">Shuffle tray</button>
+        <span class="sp" id="trayNote"></span>
+      </div>
+      </div>
+    </div>
+    </div>
+    <div class="cards">
+      <div class="cardf"><h3>Hint</h3><p>The lightbulb outlines one piece that is not placed yet, and the spot where it goes, in a pulsing yellow.</p><span class="m">GameViewModel.showHint</span></div>
+      <div class="cardf"><h3>Tray sorting</h3><p>Edges first (corners, then border pieces, then the middle), by color around the color wheel, or shuffled.</p><span class="m">sortTrayEdgesFirst · sortTrayByColor</span></div>
+      <div class="cardf"><h3>Picture help</h3><p>A slider for how strongly the picture shows under the pieces (30% by default), and a preview card you can drag anywhere and tap to enlarge.</p><span class="m">ghostAlpha · FloatingPreview</span></div>
+      <div class="cardf"><h3>Zoom and pan</h3><p>Pinch to zoom from half the fitted size up to 8 times, drag the empty table to pan. An edge-pieces filter hides the middle pieces.</p><span class="m">BoardState.transform</span></div>
+      <div class="cardf"><h3>Sounds and haptics</h3><p>A snap, a join and a win sound, synthesized by <code>tools/sounds.py</code>, a haptic on every snap and confetti at the end.</p><span class="m">snap.wav · join.wav · win.wav</span></div>
+      <div class="cardf"><h3>Auto-save and best times</h3><p>Games save as you play and resume where you left off. Best times are kept per puzzle and per piece count.</p><span class="m">SaveStore · Prefs.recordTime</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="cut to-table" data-seed="41" aria-hidden="true"></div>
+<section class="band" id="kids" aria-labelledby="h-kids">
+  <div class="wrap">
+    <div class="head">
+      <div class="side"><span class="pc"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg><b>3</b></span>Kids tab · 37 puzzles</div>
+      <h2 id="h-kids">Big pieces that click in before you let go.</h2>
+      <p class="lede">In Kids mode a piece drops itself as soon as it is close to its spot, so a child does not have to let go at exactly the right place. Every piece's outline is drawn on the board, and a missed piece goes back to the tray instead of getting lost on the table.</p>
+    </div>
+    <div class="kidsgrid">
+      <figure><div class="phone"><img src="img/s_kidshome.webp" alt="Kids tab: a My stars card and picture puzzles Shapes, Numbers, ABC, Colors, Fruit, Rainbow" width="600" height="1233" loading="lazy"></div><figcaption><b>The Kids tab</b>, with the star count on top.</figcaption></figure>
+      <figure><div class="phone"><img src="img/s_kids2.webp" alt="Owl puzzle in Kids mode: white piece outlines on the board, the moon piece placed, three big pieces in the tray" width="600" height="1233" loading="lazy"></div><figcaption><b>16 pieces with outlines.</b> The speaker button reads the word.</figcaption></figure>
+      <figure><div class="phone"><img src="img/s_win1.webp" alt="Finished ladybug puzzle with confetti falling" width="600" height="1233" loading="lazy"></div><figcaption><b>Seams fade, confetti falls</b>, and the word is read aloud.</figcaption></figure>
+      <figure><div class="phone"><img src="img/s_win2.webp" alt="Well done dialog: You earned a star! You have 1." width="600" height="1233" loading="lazy"></div><figcaption><b>A star for every finish</b>, and a sticker in the collection.</figcaption></figure>
+    </div>
+    <div class="split">
+      <table class="cmp">
+        <thead><tr><th scope="col">Rule</th><th scope="col">Puzzles tab</th><th scope="col">Kids tab</th></tr></thead>
+        <tbody>
+          <tr><td>Piece counts</td><td>9 to 150</td><td class="kid">4, 6, 9, 12, 16</td></tr>
+          <tr><td>Snap distance</td><td>22% of a cell, at least 20 dp</td><td class="kid">45% of a cell, at least 32 dp</td></tr>
+          <tr><td>When it snaps</td><td>When you let go</td><td class="kid">While dragging</td></tr>
+          <tr><td>A missed piece</td><td>Stays on the table</td><td class="kid">Goes back to the tray</td></tr>
+          <tr><td>Outlines on the board</td><td>No</td><td class="kid">Yes</td></tr>
+          <tr><td>Zoom and timer</td><td>Yes</td><td class="kid">No</td></tr>
+          <tr><td>Tray thickness</td><td>96 dp, 120 dp on tablets</td><td class="kid">132 dp, 160 dp on tablets</td></tr>
+        </tbody>
+      </table>
+      <div class="lockdemo">
+        <h3>Kids lock</h3>
+        <p>The child icon on the home screen shows only Kids puzzles. To unlock, a grown-up holds the button for 3 seconds. Try it.</p>
+        <button class="hold" id="hold" type="button" aria-describedby="lockState"><svg class="ring" viewBox="0 0 112 112" aria-hidden="true"><circle id="ring" cx="56" cy="56" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"/></svg><span>Hold</span></button>
+        <div class="lockstate" id="lockState" aria-live="polite">Locked</div>
+      </div>
+    </div>
+    <div>
+      <div class="head" style="margin-bottom:18px"><h3 style="font-size:26px">The picture's word, in English or French.</h3><p style="color:var(--sub)">The app reads the word with the phone's text-to-speech, in French when the phone is set to French and a French voice is installed, at speech rate 0.9. Here your browser's voice reads the same strings from <code>catalog.json</code>.</p></div>
+      <div class="langs" role="group" aria-label="Language" style="margin-bottom:14px"><button class="chip" type="button" data-lang="en" aria-pressed="true">English</button><button class="chip" type="button" data-lang="fr" aria-pressed="false">Français</button><span class="lockstate" id="ttsNote" style="margin-left:8px"></span></div>
+      <div class="words" id="words"></div>
+      <p style="margin-top:14px;font-size:14px;color:var(--sub)">All Kids illustrations are drawn by <code>tools/kids_illustrations.py</code> (Python and Pillow, 1600 × 1200, with the Fredoka font). Counting cards go from 1 to 10; letter cards use words that start with the same letter in English and French.</p>
+    </div>
+  </div>
+</section>
+
+<div class="cut to-sheet" data-seed="53" aria-hidden="true"></div>
+<section class="band sheet" id="photos" aria-labelledby="h-photos">
+  <div class="wrap">
+    <div class="head">
+      <div class="side"><span class="pc"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg><b>4</b></span>Your photos · ui/crop</div>
+      <h2 id="h-photos">Any photo becomes a puzzle, and stays on the phone.</h2>
+      <p class="lede">The app has no internet permission, so photos never leave the device. It uses the system Photo Picker and the camera app, which need no storage or camera permission of their own.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>Pick or shoot</h3><p>"From photo" opens the gallery through the Photo Picker, or the camera through a FileProvider.</p></div>
+      <div class="step"><h3>Crop</h3><p>Keep the original shape or crop to 1:1, 4:3 or 3:4, framing the picture with your fingers.</p></div>
+      <div class="step"><h3>Keep</h3><p>The photo is copied into the app's own storage, downscaled to 1600 px on the long side with EXIF rotation applied.</p></div>
+      <div class="step"><h3>Play</h3><p>It appears under "My photos". The grid is chosen to keep pieces close to square for that photo's shape.</p></div>
+    </div>
+    <p style="color:var(--sub)">The demo at the top does the same in your browser: choose <a href="#play">Your photo</a> and the picture is cut locally, without being uploaded.</p>
+  </div>
+</section>
+
+<div class="cut to-table" data-seed="67" aria-hidden="true"></div>
+<section class="band" id="inside" aria-labelledby="h-inside">
+  <div class="wrap">
+    <div class="head">
+      <div class="side"><span class="pc"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg><b>5</b></span>Inside · app/src/main</div>
+      <h2 id="h-inside">One activity, a pure Kotlin engine, and JSON files.</h2>
+      <p class="lede">No backend, no database and no DI framework. The engine has no Android dependency except the renderer, so the cutting and the grid are covered by plain JUnit tests.</p>
+    </div>
+    <div class="arch">
+      <div class="layer"><div class="lh"><h3>Screens</h3><span>ui · Compose</span></div>
+        <div class="mods">
+          <div class="mod"><code>HomeScreen</code><small>Puzzles, Kids, My photos, Saved tabs; stars and stickers; Kids lock</small></div>
+          <div class="mod"><code>SetupScreen</code><small>Piece chips with the real count, e.g. 35 for a 7 × 5 grid</small></div>
+          <div class="mod"><code>CropScreen</code><small>Original, 1:1, 4:3, 3:4</small></div>
+          <div class="mod"><code>GameScreen</code> + <code>BoardState</code><small>One Canvas: frame, picture, placed layer, loose pieces, tray, confetti</small></div>
+          <div class="mod"><code>GameViewModel</code><small>Drop and join, tray sorts, spread, hints, timer, completion</small></div>
+        </div>
+      </div>
+      <div class="layer engine"><div class="lh"><h3>Engine</h3><span>engine · pure Kotlin</span></div>
+        <div class="mods">
+          <div class="mod"><code>PuzzleGrid.forTarget</code><small>Tries every grid from 2 × 2 to 30 × 30 and keeps the one closest to the target count with the squarest cells</small></div>
+          <div class="mod"><code>PuzzleCut</code><small>Seeded edges, outlines through a <code>PathSink</code>, neighbours, edge rank, snap test</small></div>
+          <div class="mod"><code>PieceRenderer</code><small>One padded bitmap per piece with a light bevel, its alpha mask for shadows, average colors for sorting</small></div>
+        </div>
+      </div>
+      <div class="layer"><div class="lh"><h3>Data</h3><span>data · local files</span></div>
+        <div class="mods">
+          <div class="mod"><code>PuzzleRepository</code><small><code>assets/puzzles/catalog.json</code>: 61 pictures, plus your photos</small></div>
+          <div class="mod"><code>SaveStore</code><small>One JSON file per game in <code>saves/</code>, written atomically</small></div>
+          <div class="mod"><code>Prefs</code><small>SharedPreferences: table color, sound, picture strength, Kids lock, stars, best times</small></div>
+          <div class="mod"><code>ImageIO</code><small>Decode, EXIF rotation, downscale to 1600 px</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="twocol">
+      <div>
+        <h3 style="margin-bottom:12px">What a saved game holds</h3>
+<pre class="code" aria-label="Fields of SavedGame"><span class="c">// SaveStore.kt, serialized with kotlinx.serialization</span>
+<span class="k">data class</span> SavedGame(
+    imageId: String, rows: Int, cols: Int,
+    seed: Long,            <span class="c">// rebuilds every edge</span>
+    width: Int, height: Int,
+    pieces: List&lt;SavedPiece&gt;, <span class="c">// x, y, inTray, placed, group</span>
+    tray: List&lt;Int&gt;, loose: List&lt;Int&gt;,
+    elapsedMs: Long, moves: Int, updatedAt: Long,
+)</pre>
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px">The 13 engine tests</h3>
+        <ul class="tests">
+          <li><span>PuzzleCutTest</span><code>sameSeedGivesSameShapes</code></li>
+          <li><span>PuzzleCutTest</span><code>differentSeedsGiveDifferentShapes</code></li>
+          <li><span>PuzzleCutTest</span><code>neighboursShareTheirEdge</code></li>
+          <li><span>PuzzleCutTest</span><code>outlineStaysInsidePaddedCell</code></li>
+          <li><span>PuzzleCutTest</span><code>snapToleranceIsRespected</code></li>
+          <li><span>PuzzleCutTest</span><code>neighboursAreAdjacentCells</code></li>
+          <li><span>PuzzleCutTest</span><code>edgeRankOrdersCornersEdgesMiddle</code></li>
+          <li><span>PuzzleCutTest</span><code>borderPieces</code></li>
+          <li><span>PuzzleGridTest</span><code>squareImageGetsExactSquareGrids</code></li>
+          <li><span>PuzzleGridTest</span><code>landscapeImageHasMoreColumns</code></li>
+          <li><span>PuzzleGridTest</span><code>portraitImageHasMoreRows</code></li>
+          <li><span>PuzzleGridTest</span><code>kidsOptionsGiveTinyGrids</code></li>
+          <li><span>PuzzleGridTest</span><code>countsStayCloseToTarget</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cut to-sheet" data-seed="79" aria-hidden="true"></div>
+<section class="band sheet" id="releases" aria-labelledby="h-rel">
+  <div class="wrap">
+    <div class="head">
+      <div class="side"><span class="pc"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg><b>6</b></span>Releases · GitHub</div>
+      <h2 id="h-rel">Four releases, each installing over the last.</h2>
+      <p class="lede">Every release is an APK attached to a GitHub release. Saved games carry over when you update.</p>
+    </div>
+    <ol class="rel">
+      <li><div class="v">1.0.0</div><div class="d">28 Oct 2026 · 6.9 MB</div><p>24 built-in puzzles, photo puzzles with cropping, 9 to 150 pieces, picture hint, edge filter, pinch zoom, auto-save, best times.</p></li>
+      <li><div class="v">1.1.0</div><div class="d">28 Oct 2026 · 8.2 MB</div><p>Kids tab with 15 puzzles, pieces that join into groups, hint button, edges-first sort, sounds, haptics, confetti.</p></li>
+      <li><div class="v">1.1.1</div><div class="d">28 Oct 2026 · 8.2 MB</div><p>Fixes a blank white screen after tapping back twice quickly.</p></li>
+      <li class="cur"><div class="v">1.2.0</div><div class="d">28 Oct 2026 · 9.0 MB · latest</div><p>Spread pieces, sort by color, picture preview, picture slider, Kids lock, stars and stickers, 22 more Kids pictures, words read aloud.</p></li>
+    </ol>
+  </div>
+</section>
+
+<div class="cut to-table" data-seed="83" aria-hidden="true"></div>
+<section class="band" id="install" aria-labelledby="h-inst">
+  <div class="wrap">
+    <div class="head">
+      <div class="side"><span class="pc"><svg viewBox="8 2 56 56" aria-hidden="true"><path fill="currentColor" d="M14 18 C20.8 18 31 21.4 27.6 14.6 C24.2 7.8 37.8 7.8 34.4 14.6 C31 21.4 41.2 18 48 18 C48 24.8 44.6 35 51.4 31.6 C58.2 28.2 58.2 41.8 51.4 38.4 C44.6 35 48 45.2 48 52 L14 52 Z"/></svg><b>7</b></span>Install</div>
+      <h2 id="h-inst">Install the APK, or build it yourself.</h2>
+      <p class="lede">Puzzles is not in an app store. Download the APK from GitHub on the phone, or build it from source with Gradle.</p>
+    </div>
+    <div class="inst">
+      <div class="ibox">
+        <h3>On the phone</h3>
+        <ol>
+          <li>Open this page on the Android phone or tablet (Android 8.0 or newer).</li>
+          <li>Tap <b>Download APK</b> below and open the downloaded file.</li>
+          <li>When Android asks, allow installing apps from your browser or file manager.</li>
+          <li>Updating later: install the new APK over the old one. Saved games are kept.</li>
+        </ol>
+        <div class="ctas"><a class="btn primary" href="https://github.com/ouaazizdriss/puzzles/releases/download/v1.2.0/puzzles-1.2.0.apk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>puzzles-1.2.0.apk <small>9.0 MB</small></a><a class="btn" href="https://github.com/ouaazizdriss/puzzles/releases">All releases</a></div>
+      </div>
+      <div class="ibox">
+        <h3>From source</h3>
+        <p style="color:var(--sub);font-size:15.5px">Needs the Android SDK (compile SDK 36) and JDK 17 or newer.</p>
+<pre class="code" aria-label="Build commands"><span class="k">git clone</span> https://github.com/ouaazizdriss/puzzles
+<span class="k">cd</span> puzzles
+./gradlew assembleDebug      <span class="c"># app/build/outputs/apk/debug/app-debug.apk</span>
+./gradlew testDebugUnitTest  <span class="c"># engine unit tests</span></pre>
+        <p style="color:var(--sub);font-size:15px">Release builds are signed when a <code>keystore.properties</code> file, not committed, points to a keystore. <code>tools/kids_illustrations.py</code> redraws the Kids pictures and <code>tools/sounds.py</code> the sound effects.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="cut to-sheet" data-seed="97" aria-hidden="true"></div>
+<footer>
+  <div class="wrap">
+    <div class="credits">
+      <div><b>Photos</b>The 24 photo puzzles and 5 Kids photos are from Unsplash, under the Unsplash License, credited in <a href="https://github.com/ouaazizdriss/puzzles/blob/main/CREDITS.md">CREDITS.md</a>. The castle on this page: "Fairytale castle", photo by <a href="https://unsplash.com/photos/tn2rBnvIl9I">Rachel Davis on Unsplash</a>.</div>
+      <div><b>Illustrations and sounds</b>Kids illustrations drawn for the app by <code>tools/kids_illustrations.py</code> with the Fredoka font (SIL Open Font License). Sound effects synthesized by <code>tools/sounds.py</code>.</div>
+      <div><b>Piece shape</b>The knob edge follows Draradech's jigsaw generator, as noted in <code>PuzzleCut.kt</code>. The demo uses a different random generator than Kotlin's, so its shapes differ from the app's for the same seed.</div>
+    </div>
+    <div class="foot"><span>Built by Driss OUAAZIZ · 2026</span><a href="https://github.com/ouaazizdriss/puzzles">github.com/ouaazizdriss/puzzles</a></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- theme ---------- */
+const root = document.documentElement, tb = $("#theme");
+const sysDark = matchMedia("(prefers-color-scheme: dark)");
+function isDark() { const t = root.dataset.theme; return t ? t === "dark" : sysDark.matches; }
+function syncThemeBtn() { tb.setAttribute("aria-label", isDark() ? "Switch to light theme" : "Switch to dark theme"); }
+try { const s = localStorage.getItem("puzzles-theme"); if (s === "dark" || s === "light") root.dataset.theme = s; } catch (e) {}
+try { const q = new URLSearchParams(location.search).get("theme"); if (q === "dark" || q === "light") root.dataset.theme = q; } catch (e) {}
+syncThemeBtn();
+tb.addEventListener("click", () => { root.dataset.theme = isDark() ? "light" : "dark"; try { localStorage.setItem("puzzles-theme", root.dataset.theme); } catch (e) {} syncThemeBtn(); drawTray(); });
+sysDark.addEventListener("change", syncThemeBtn);
+
+/* ---------- seeded random (mulberry32; Kotlin's Random differs, so shapes differ from the app's) ---------- */
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* ---------- port of engine/PuzzleCut.kt ---------- */
+const TAB = 0.1, JITTER = 0.035, PAD_RATIO = 3 * TAB + JITTER + 0.02;
+function edgePoints(rnd, sx, sy, dx, dy, length, unit, opt) {
+  const flip = rnd() < 0.5 ? 1 : -1;
+  const j = opt && opt.noJitter ? 0 : JITTER;
+  const jitter = () => (rnd() * 2 - 1) * j;
+  const a = jitter(), b = jitter(), c = jitter(), d = jitter(), e = jitter();
+  const t = TAB, half = length / 2, u = unit;
+  const f = opt && opt.flip != null ? opt.flip : flip;
+  const pts = [
+    0, 0,
+    0.2 * length, a * u,
+    half + (b + d) * u, (-t + c) * u,
+    half + (-t + b) * u, (t + c) * u,
+    half + (-2 * t + b - d) * u, (3 * t + c) * u,
+    half + (2 * t + b - d) * u, (3 * t + c) * u,
+    half + (t + b) * u, (t + c) * u,
+    half + (b + d) * u, (-t + c) * u,
+    0.8 * length, e * u,
+    length, 0,
+  ];
+  const out = new Float32Array(20);
+  for (let k = 0; k < 10; k++) {
+    const along = pts[2 * k], off = pts[2 * k + 1] * f;
+    out[2 * k] = sx + dx * along + dy * off;
+    out[2 * k + 1] = sy + dy * along + dx * off;
+  }
+  out.raw = pts; out.flip = f;
+  return out;
+}
+class PuzzleCut {
+  constructor(width, height, rows, cols, seed) {
+    Object.assign(this, { width, height, rows, cols, seed });
+    this.cellW = width / cols; this.cellH = height / rows;
+    this.unit = Math.min(this.cellW, this.cellH);
+    this.pad = this.unit * PAD_RATIO;
+    this.count = rows * cols;
+    const rnd = rng(seed);
+    this.hEdges = []; this.vEdges = [];
+    for (let i = 0; i < (rows - 1) * cols; i++) { const r = Math.floor(i / cols), c = i % cols; this.hEdges.push(edgePoints(rnd, c * this.cellW, (r + 1) * this.cellH, 1, 0, this.cellW, this.unit)); }
+    for (let i = 0; i < rows * (cols - 1); i++) { const r = Math.floor(i / (cols - 1)), c = i % (cols - 1); this.vEdges.push(edgePoints(rnd, (c + 1) * this.cellW, r * this.cellH, 0, 1, this.cellH, this.unit)); }
+  }
+  row(id) { return Math.floor(id / this.cols); }
+  col(id) { return id % this.cols; }
+  homeX(id) { return this.col(id) * this.cellW; }
+  homeY(id) { return this.row(id) * this.cellH; }
+  neighbours(id) { const r = this.row(id), c = this.col(id), o = []; if (r > 0) o.push(id - this.cols); if (r < this.rows - 1) o.push(id + this.cols); if (c > 0) o.push(id - 1); if (c < this.cols - 1) o.push(id + 1); return o; }
+  edgeRank(id) { const v = this.row(id) === 0 || this.row(id) === this.rows - 1, h = this.col(id) === 0 || this.col(id) === this.cols - 1; return v && h ? 0 : (v || h ? 1 : 2); }
+  isNearHome(id, x, y, tol) { return Math.abs(x - this.homeX(id)) <= tol && Math.abs(y - this.homeY(id)) <= tol; }
+  outline(id, sink) {
+    const r = this.row(id), c = this.col(id), cols = this.cols, rows = this.rows;
+    const x0 = c * this.cellW, y0 = r * this.cellH, x1 = (c + 1) * this.cellW, y1 = (r + 1) * this.cellH;
+    sink.moveTo(x0, y0);
+    if (r === 0) sink.lineTo(x1, y0); else fwd(this.hEdges[(r - 1) * cols + c], sink);
+    if (c === cols - 1) sink.lineTo(x1, y1); else fwd(this.vEdges[r * (cols - 1) + c], sink);
+    if (r === rows - 1) sink.lineTo(x0, y1); else bwd(this.hEdges[r * cols + c], sink);
+    if (c === 0) sink.lineTo(x0, y0); else bwd(this.vEdges[r * (cols - 1) + c - 1], sink);
+    sink.closePath();
+  }
+}
+function fwd(p, s) { for (let k = 0; k < 3; k++) { const i = 2 + k * 6; s.bezierCurveTo(p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4], p[i + 5]); } }
+function bwd(p, s) { for (let k = 0; k < 3; k++) { const q = 8 - k * 3; s.bezierCurveTo(p[2 * q], p[2 * q + 1], p[2 * q - 2], p[2 * q - 1], p[2 * q - 4], p[2 * q - 3]); } }
+
+/* ---------- port of engine/PuzzleGrid.kt ---------- */
+const PIECE_OPTIONS = [9, 16, 36, 64], KIDS_OPTIONS = [4, 6, 9, 12, 16];
+function forTarget(w, h, target) {
+  let best = { rows: 2, cols: 2 }, bestScore = Infinity;
+  for (let rows = 2; rows <= 30; rows++) for (let cols = 2; cols <= 30; cols++) {
+    const aspect = (w / cols) / (h / rows);
+    const score = 2 * Math.abs(rows * cols - target) / target + Math.abs(Math.log(aspect));
+    if (score < bestScore) { bestScore = score; best = { rows, cols }; }
+  }
+  return best;
+}
+
+/* ---------- jigsaw cuts between bands ---------- */
+function cutDivider(el) {
+  const w = el.clientWidth; if (!w) return;
+  const n = Math.max(3, Math.round(w / 170)), cell = w / n, unit = 92, base = 32;
+  const rnd = rng(+el.dataset.seed || 1);
+  let d = `M0 ${base + 40} L0 ${base}`;
+  for (let i = 0; i < n; i++) {
+    const p = edgePoints(rnd, i * cell, base, 1, 0, cell, Math.min(unit, cell));
+    for (let k = 0; k < 3; k++) { const j = 2 + k * 6; d += ` C${p[j].toFixed(1)} ${p[j + 1].toFixed(1)} ${p[j + 2].toFixed(1)} ${p[j + 3].toFixed(1)} ${p[j + 4].toFixed(1)} ${p[j + 5].toFixed(1)}`; }
+  }
+  d += ` L${w} ${base + 40} Z`;
+  el.innerHTML = `<svg viewBox="0 0 ${w} 64" preserveAspectRatio="none" aria-hidden="true"><path d="${d}"/></svg>`;
+}
+const cuts = $$(".cut");
+function drawCuts() { cuts.forEach(cutDivider); }
+
+/* ---------- the board ---------- */
+const PICS = {
+  castle: { src: "img/p1040.webp", title: "Fairytale castle", kidsOk: true },
+  owl: { src: "img/k_owl.webp", title: "Owl", say: ["An owl", "Un hibou"] },
+  sea: { src: "img/k_sea.webp", title: "Under the sea", say: ["Under the sea", "Sous la mer"] },
+};
+const TABLE_COLORS = ["#2B2D31", "#2F4A3A", "#5A4232", "#34405C", "#E6E1D8"];
+const CONFETTI_COLORS = ["#EF476F", "#FFD166", "#06D6A0", "#118AB2", "#8338EC", "#FF9F1C"];
+const HINT = "255,213,79";
+
+const cv = $("#board"), ctx = cv.getContext("2d"), stage = $("#stage");
+const probe = document.createElement("canvas").getContext("2d");
+const S = {
+  mode: "std", pic: "castle", target: 16, tableColor: 0, ghostAlpha: 0.3, sound: true,
+  img: null, imgW: 0, imgH: 0, cut: null, seed: 1, sprites: [], masks: [], whites: [], paths: [], colors: null,
+  pieces: [], loose: [], placedLayer: null, placedCount: 0, moves: 0, startAt: 0, elapsed: 0, completed: false,
+  scale: 1, ox: 0, oy: 0, cssW: 0, cssH: 0, dpr: 1,
+  drag: null, hint: -1, hintT0: 0, flashIds: [], flashT0: 0, celebrateT0: 0, returning: null, tray: [],
+};
+const isMobile = () => matchMedia("(max-width: 560px)").matches;
+if (isMobile()) S.target = 9;
+
+const sounds = {};
+["snap", "join", "win"].forEach(n => { try { const a = new Audio(`snd/${n}.wav`); a.preload = "auto"; sounds[n] = a; } catch (e) {} });
+function play(n) { if (!S.sound || !sounds[n]) return; try { const a = sounds[n].cloneNode(); a.play().catch(() => {}); } catch (e) {} }
+
+function loadImage(src) { return new Promise((res, rej) => { const i = new Image(); i.decoding = "async"; i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+
+function sizeCanvas() {
+  const w = stage.clientWidth;
+  const h = Math.round(w * (isMobile() ? 1.12 : 0.74));
+  S.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  S.cssW = w; S.cssH = h;
+  cv.style.height = h + "px";
+  cv.width = Math.round(w * S.dpr); cv.height = Math.round(h * S.dpr);
+}
+
+/* PieceRenderer.render: clip the picture by the piece path, light bevel inside, thin outline */
+function renderSprites() {
+  const c = S.cut, w = Math.ceil(c.cellW + 2 * c.pad), h = Math.ceil(c.cellH + 2 * c.pad);
+  const stroke = Math.max(1, c.unit * 0.012);
+  S.sprites = []; S.masks = []; S.whites = []; S.paths = [];
+  for (let id = 0; id < c.count; id++) {
+    const path = new Path2D(); c.outline(id, path); S.paths.push(path);
+    const sp = document.createElement("canvas"); sp.width = w; sp.height = h;
+    const g = sp.getContext("2d");
+    g.translate(c.pad - c.homeX(id), c.pad - c.homeY(id));
+    g.save(); g.clip(path); g.drawImage(S.img, 0, 0, c.width, c.height);
+    g.save(); g.translate(stroke, stroke); g.lineWidth = stroke * 2; g.strokeStyle = "rgba(255,255,255,0.314)"; g.stroke(path); g.restore();
+    g.translate(-stroke, -stroke); g.lineWidth = stroke * 2; g.strokeStyle = "rgba(0,0,0,0.25)"; g.stroke(path);
+    g.restore();
+    g.lineWidth = stroke; g.strokeStyle = "rgba(0,0,0,0.4)"; g.stroke(path);
+    S.sprites.push(sp);
+    S.masks.push(tint(sp, "#000")); S.whites.push(tint(sp, "#fff"));
+  }
+}
+function tint(src, color) { const m = document.createElement("canvas"); m.width = src.width; m.height = src.height; const g = m.getContext("2d"); g.drawImage(src, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = color; g.fillRect(0, 0, m.width, m.height); return m; }
+
+/* PieceRenderer.averageColors: 8 x 8 samples per cell (needs readable pixels) */
+function averageColors() {
+  try {
+    const c = S.cut, k = document.createElement("canvas"); k.width = Math.round(c.width); k.height = Math.round(c.height);
+    const g = k.getContext("2d", { willReadFrequently: true }); g.drawImage(S.img, 0, 0, k.width, k.height);
+    const data = g.getImageData(0, 0, k.width, k.height).data, n = 8, out = [];
+    for (let id = 0; id < c.count; id++) {
+      let r = 0, gg = 0, b = 0;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        const x = Math.min(k.width - 1, Math.max(0, Math.floor(c.homeX(id) + (i + 0.5) * c.cellW / n)));
+        const y = Math.min(k.height - 1, Math.max(0, Math.floor(c.homeY(id) + (j + 0.5) * c.cellH / n)));
+        const o = (y * k.width + x) * 4; r += data[o]; gg += data[o + 1]; b += data[o + 2];
+      }
+      out.push([r / 64, gg / 64, b / 64]);
+    }
+    return out;
+  } catch (e) { return null; }
+}
+
+function newGame(keepSeed) {
+  const g = forTarget(S.imgW, S.imgH, S.target);
+  if (!keepSeed) S.seed = (Math.random() * 2 ** 31) | 0;
+  S.cut = new PuzzleCut(S.imgW, S.imgH, g.rows, g.cols, S.seed);
+  renderSprites();
+  S.colors = averageColors();
+  const c = S.cut;
+  S.pieces = Array.from({ length: c.count }, (_, id) => ({ x: c.homeX(id), y: c.homeY(id), placed: false, group: id }));
+  S.loose = Array.from({ length: c.count }, (_, i) => i);
+  S.placedLayer = document.createElement("canvas"); S.placedLayer.width = Math.ceil(c.width); S.placedLayer.height = Math.ceil(c.height);
+  S.placedCount = 0; S.moves = 0; S.startAt = 0; S.elapsed = 0; S.completed = false; S.hint = -1; S.drag = null; S.returning = null; S.celebrateT0 = 0;
+  $("#done").classList.remove("on");
+  spread();
+  S.tray = Array.from({ length: c.count }, (_, i) => i);
+  shuffleArr(S.tray, rng(S.seed ^ 99));
+  trayLayout(true);
+  updateStatus(); renderPieceChips(); request();
+  $("#sortColor").disabled = !S.colors;
+  $("#trayNote").textContent = S.colors ? "" : "Sorting by color needs the picture's pixels, which this browser did not allow.";
+}
+
+/* GameViewModel.spreadTray: rings shaped like the screen around the frame, nearest spots first */
+function spread() {
+  const c = S.cut;
+  const ids = S.loose.filter(id => !S.loose.some(o => o !== id && S.pieces[o].group === S.pieces[id].group));
+  shuffleArr(ids, Math.random);
+  if (!ids.length) return;
+  const moving = new Set(ids), gap = c.pad * 0.6;
+  const stepX = c.cellW + 2 * c.pad - gap, stepY = c.cellH + 2 * c.pad - gap;
+  const taken = S.loose.filter(id => !moving.has(id)).map(id => [S.pieces[id].x + c.cellW / 2, S.pieces[id].y + c.cellH / 2]);
+  const reach = Math.ceil(Math.sqrt(ids.length)) + Math.max(c.rows, c.cols);
+  const aspect = Math.min(3, Math.max(0.3, S.cssW / S.cssH));
+  const spots = [];
+  for (let i = -reach; i <= reach; i++) for (let j = -reach; j <= reach; j++) {
+    const x = c.width / 2 + i * stepX - c.cellW / 2, y = c.height / 2 + j * stepY - c.cellH / 2;
+    const dx = Math.max(Math.max(-(x + c.cellW + c.pad), x - c.pad - c.width), 0);
+    const dy = Math.max(Math.max(-(y + c.cellH + c.pad), y - c.pad - c.height), 0);
+    if (dx <= 0 && dy <= 0) continue;
+    const cx = x + c.cellW / 2, cy = y + c.cellH / 2;
+    if (taken.some(t => Math.abs(t[0] - cx) < stepX * 0.8 && Math.abs(t[1] - cy) < stepY * 0.8)) continue;
+    const ox = cx - c.width / 2, oy = cy - c.height / 2;
+    spots.push([x, y, Math.max(Math.abs(ox) / aspect, Math.abs(oy)) + Math.hypot(ox, oy) * 0.001]);
+  }
+  spots.sort((a, b) => a[2] - b[2]);
+  ids.forEach((id, k) => { const s = spots[k]; if (!s) return; Object.assign(S.pieces[id], { x: s[0], y: s[1], group: id }); });
+  fitContent();
+}
+function shuffleArr(a, r) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* BoardState.fitContent: zoom out until the frame and every loose piece are visible */
+function fitContent() {
+  const c = S.cut; if (!c || !S.cssW) return;
+  let l = 0, t = 0, r = c.width, b = c.height;
+  for (const id of S.loose) { const p = S.pieces[id]; l = Math.min(l, p.x - c.pad); t = Math.min(t, p.y - c.pad); r = Math.max(r, p.x + c.cellW + c.pad); b = Math.max(b, p.y + c.cellH + c.pad); }
+  const w = r - l, h = b - t;
+  const s = Math.max(0.01, Math.min(S.cssW * 0.92 / w, S.cssH * 0.9 / h));
+  S.scale = s; S.ox = (S.cssW - w * s) / 2 - l * s; S.oy = (S.cssH - h * s) / 2 - t * s;
+}
+const toWorld = (x, y) => [(x - S.ox) / S.scale, (y - S.oy) / S.scale];
+
+function groupOf(id) { const p = S.pieces[id]; if (p.placed) return [id]; return S.loose.filter(o => S.pieces[o].group === p.group); }
+function bringToFront(ids) { const set = new Set(ids); S.loose = S.loose.filter(i => !set.has(i)).concat(S.loose.filter(i => set.has(i))); }
+function snapTolerance() { const c = S.cut; return S.mode === "kids" ? Math.max(c.unit * 0.45, 32 / S.scale) : Math.max(c.unit * 0.22, 20 / S.scale); }
+
+function paintPlaced(ids) { const g = S.placedLayer.getContext("2d"), c = S.cut; ids.forEach(id => g.drawImage(S.sprites[id], c.homeX(id) - c.pad, c.homeY(id) - c.pad)); }
+
+/* GameViewModel.dropGroup */
+function dropGroup(grabbed, dx, dy, tol) {
+  const c = S.cut, members = groupOf(grabbed);
+  S.moves++;
+  if (members.some(id => c.isNearHome(id, S.pieces[id].x + dx, S.pieces[id].y + dy, tol))) {
+    members.forEach(id => { S.pieces[id] = { x: c.homeX(id), y: c.homeY(id), placed: true, group: id }; });
+    paintPlaced(members);
+    const set = new Set(members); S.loose = S.loose.filter(i => !set.has(i));
+    S.placedCount += members.length;
+    if (set.has(S.hint)) S.hint = -1;
+    if (S.placedCount === c.count) complete();
+    return "placed";
+  }
+  members.forEach(id => { S.pieces[id].x += dx; S.pieces[id].y += dy; });
+  let joined = false, changed = true;
+  while (changed) {
+    changed = false;
+    const group = S.pieces[grabbed].group;
+    const current = S.loose.filter(i => S.pieces[i].group === group);
+    search: for (const m of current) for (const n of c.neighbours(m)) {
+      const pn = S.pieces[n];
+      if (pn.placed || pn.group === group) continue;
+      const pm = S.pieces[m];
+      const ex = pn.x - pm.x - (c.homeX(n) - c.homeX(m)), ey = pn.y - pm.y - (c.homeY(n) - c.homeY(m));
+      if (Math.abs(ex) <= tol && Math.abs(ey) <= tol) {
+        current.forEach(i => { S.pieces[i].x += ex; S.pieces[i].y += ey; S.pieces[i].group = pn.group; });
+        joined = changed = true; break search;
+      }
+    }
+  }
+  bringToFront(groupOf(grabbed));
+  return joined ? "joined" : "none";
+}
+
+function complete() {
+  S.completed = true; S.hint = -1; S.elapsed = Date.now() - S.startAt;
+  S.celebrateT0 = performance.now();
+  play("win");
+  const kids = S.mode === "kids";
+  $("#dTitle").textContent = "Well done!";
+  $("#dLine").textContent = "You finished the puzzle!";
+  $("#dStar").style.display = kids ? "block" : "none";
+  $("#dStats").textContent = kids ? "You earned a star!" : `${S.cut.count} pieces in ${fmtTime(S.elapsed)} · ${S.moves} moves`;
+  if (kids) { const p = PICS[S.pic]; speak(p && p.say ? p.say : null, true); }
+  setTimeout(() => { if (S.completed) { $("#done").classList.add("on"); $("#dAgain").focus({ preventScroll: true }); } }, reduced ? 300 : 3200);
+}
+function fmtTime(ms) { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
+function updateStatus() {
+  const c = S.cut; if (!c) return;
+  const el = $("#pStatus");
+  if (S.mode === "kids") el.textContent = `${S.placedCount} / ${c.count}`;
+  else el.textContent = `${S.placedCount}/${c.count} · ${fmtTime(S.completed ? S.elapsed : S.startAt ? Date.now() - S.startAt : 0)}`;
+}
+setInterval(() => { if (S.startAt && !S.completed && S.mode !== "kids") updateStatus(); }, 1000);
+
+/* ---------- input ---------- */
+function pos(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+function hitLoose(x, y) {
+  const c = S.cut, [wx, wy] = toWorld(x, y);
+  for (let k = S.loose.length - 1; k >= 0; k--) {
+    const id = S.loose[k], p = S.pieces[id];
+    if (probe.isPointInPath(S.paths[id], wx - (p.x - c.homeX(id)), wy - (p.y - c.homeY(id)))) return id;
+  }
+  return -1;
+}
+cv.addEventListener("pointerdown", e => {
+  if (!S.cut || S.completed || S.drag || S.returning) return;
+  const [x, y] = pos(e), id = hitLoose(x, y);
+  if (id < 0) return;
+  e.preventDefault();
+  cv.setPointerCapture(e.pointerId);
+  const members = groupOf(id); bringToFront(members);
+  const [wx, wy] = toWorld(x, y);
+  S.drag = { id, members: new Set(members), sx: wx, sy: wy, dx: 0, dy: 0, pid: e.pointerId, done: false };
+  if (!S.startAt) S.startAt = Date.now();
+  cv.classList.add("dragging"); request();
+});
+cv.addEventListener("pointermove", e => {
+  const d = S.drag; if (!d || d.pid !== e.pointerId || d.done) return;
+  const [x, y] = pos(e), [wx, wy] = toWorld(x, y);
+  d.dx = wx - d.sx; d.dy = wy - d.sy;
+  if (S.mode === "kids") {
+    const p = S.pieces[d.id];
+    if (S.cut.isNearHome(d.id, p.x + d.dx, p.y + d.dy, snapTolerance())) { d.done = true; finish(dropGroup(d.id, d.dx, d.dy, snapTolerance())); }
+  }
+  request();
+});
+function endPointer(e) {
+  const d = S.drag; if (!d || d.pid !== e.pointerId) return;
+  if (d.done) { S.drag = null; cv.classList.remove("dragging"); return; }
+  if (S.mode === "kids") {
+    S.moves++;
+    // Young children lose track of pieces left on the table: in the app a missed piece goes back to the tray.
+    S.returning = { ids: [...d.members], dx: d.dx, dy: d.dy, t0: performance.now() };
+    S.drag = null; cv.classList.remove("dragging"); request(); return;
+  }
+  finish(dropGroup(d.id, d.dx, d.dy, snapTolerance()));
+}
+cv.addEventListener("pointerup", endPointer);
+cv.addEventListener("pointercancel", endPointer);
+function finish(result) {
+  const d = S.drag;
+  if (result === "placed") { S.flashIds = d ? [...d.members] : []; S.flashT0 = performance.now(); play("snap"); if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {} }
+  else if (result === "joined") play("join");
+  if (d && !d.done) S.drag = null;
+  if (d && d.done) { d.members = new Set(); d.dx = d.dy = 0; }
+  cv.classList.remove("dragging");
+  updateStatus(); trayLayout(false); request();
+}
+
+/* ---------- drawing ---------- */
+let raf = 0;
+function request() { if (!raf) raf = requestAnimationFrame(frame); }
+function frame(now) {
+  raf = 0;
+  draw(now);
+  const animating = S.hint >= 0 || (now - S.flashT0 < 450) || (S.celebrateT0 && now - S.celebrateT0 < 3200) || S.returning || trayAnim(now);
+  if (animating) request();
+}
+function draw(now) {
+  const c = S.cut, g = ctx, dpr = S.dpr;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = TABLE_COLORS[S.tableColor]; g.fillRect(0, 0, S.cssW, S.cssH);
+  if (!c) return;
+  g.setTransform(dpr * S.scale, 0, 0, dpr * S.scale, dpr * S.ox, dpr * S.oy);
+  g.fillStyle = "rgba(0,0,0,0.18)"; g.fillRect(0, 0, c.width, c.height);
+  g.strokeStyle = "rgba(255,255,255,0.35)"; g.lineWidth = 1.5 / S.scale; g.strokeRect(0, 0, c.width, c.height);
+  if (S.ghostAlpha > 0) { g.globalAlpha = S.ghostAlpha; g.drawImage(S.img, 0, 0, c.width, c.height); g.globalAlpha = 1; }
+  if (S.mode === "kids") { g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 2.5 / S.scale; for (let id = 0; id < c.count; id++) if (!S.pieces[id].placed) g.stroke(S.paths[id]); }
+  g.drawImage(S.placedLayer, 0, 0);
+  const fl = 1 - (now - S.flashT0) / 450;
+  if (fl > 0 && !reduced) { g.globalAlpha = fl * 0.6; S.flashIds.forEach(id => { const p = S.pieces[id]; g.drawImage(S.whites[id], p.x - c.pad, p.y - c.pad); }); g.globalAlpha = 1; }
+  let celebrate = 0;
+  if (S.completed) { celebrate = reduced ? 1 : Math.min(1, (now - S.celebrateT0) / 3200); g.globalAlpha = Math.min(1, celebrate * 2.5); g.drawImage(S.img, 0, 0, c.width, c.height); g.globalAlpha = 1; }
+  const sh = c.unit * 0.025, d = S.drag, dragSet = d ? d.members : new Set();
+  let rt = null;
+  if (S.returning) { const t = Math.min(1, (now - S.returning.t0) / (reduced ? 1 : 260)); rt = { set: new Set(S.returning.ids), k: 1 - easeOut(t) }; if (t >= 1) S.returning = null; }
+  for (const id of S.loose) {
+    if (dragSet.has(id)) continue;
+    const p = S.pieces[id]; let x = p.x, y = p.y;
+    if (rt && rt.set.has(id)) { x += S.returning ? S.returning.dx * rt.k : 0; y += S.returning ? S.returning.dy * rt.k : 0; }
+    g.globalAlpha = 0.35; g.drawImage(S.masks[id], x - c.pad + sh, y - c.pad + sh); g.globalAlpha = 1;
+    g.drawImage(S.sprites[id], x - c.pad, y - c.pad);
+  }
+  if (S.hint >= 0) {
+    const pulse = reduced ? 1 : 0.675 + 0.325 * Math.cos((now - S.hintT0) / 500 * Math.PI);
+    g.strokeStyle = `rgba(${HINT},${pulse})`; g.lineWidth = 4 / S.scale;
+    g.stroke(S.paths[S.hint]);
+    const p = S.pieces[S.hint];
+    if (!p.placed) { g.save(); g.translate(p.x - c.homeX(S.hint), p.y - c.homeY(S.hint)); g.stroke(S.paths[S.hint]); g.restore(); }
+  }
+  if (d && dragSet.size) {
+    const lift = Math.max(c.unit * 0.06, 8 / S.scale);
+    g.globalAlpha = 0.4; for (const id of S.loose) if (dragSet.has(id)) { const p = S.pieces[id]; g.drawImage(S.masks[id], p.x + d.dx - c.pad + lift, p.y + d.dy - c.pad + lift); }
+    g.globalAlpha = 1; for (const id of S.loose) if (dragSet.has(id)) { const p = S.pieces[id]; g.drawImage(S.sprites[id], p.x + d.dx - c.pad, p.y + d.dy - c.pad); }
+  }
+  if (celebrate > 0 && celebrate < 1 && !reduced) drawConfetti(celebrate);
+}
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const confetti = (() => { const r = rng(7); return Array.from({ length: 140 }, () => ({ x: r(), delay: r() * 0.3, speed: 0.7 + r() * 0.6, size: 6 + r() * 8, color: CONFETTI_COLORS[Math.floor(r() * 6)], spin: r() * 2 - 1, phase: r() * 6.28 })); })();
+function drawConfetti(progress) {
+  const g = ctx; g.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+  for (const cf of confetti) {
+    const t = Math.min(1, Math.max(0, (progress - cf.delay) / 0.7)); if (t <= 0) continue;
+    const x = (cf.x + 0.04 * Math.sin(t * 12 + cf.phase)) * S.cssW, y = (-0.05 + t * 1.15 * cf.speed) * S.cssH;
+    g.globalAlpha = t > 0.85 ? (1 - t) / 0.15 : 1;
+    g.save(); g.translate(x, y); g.rotate(cf.spin * t * 4 * Math.PI); g.fillStyle = cf.color; g.fillRect(-cf.size / 2, -cf.size / 4, cf.size, cf.size / 2); g.restore();
+  }
+  g.globalAlpha = 1;
+}
+
+/* ---------- controls ---------- */
+function setPressed(sel, on) { $$(sel).forEach(b => b.setAttribute("aria-pressed", String(on(b)))); }
+function renderPieceChips() {
+  const box = $("#pieceChips"), opts = S.mode === "kids" ? KIDS_OPTIONS : PIECE_OPTIONS;
+  box.innerHTML = "";
+  opts.forEach(t => {
+    const g = forTarget(S.imgW || 4, S.imgH || 3, t), b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = g.rows * g.cols; b.dataset.t = t;
+    b.setAttribute("aria-pressed", String(t === S.target));
+    b.addEventListener("click", () => { S.target = t; newGame(); });
+    box.appendChild(b);
+  });
+  if (S.cut) $("#gridNote").textContent = `${S.cut.cols} × ${S.cut.rows} grid · seed ${S.seed}` + (S.mode === "kids" ? " · big pieces that snap in easily" : "");
+}
+async function setPicture(key, src, title) {
+  S.pic = key;
+  setPressed("[data-pic]", b => b.dataset.pic === key);
+  $("#ownLbl").classList.toggle("on", key === "own");
+  $("#ownLbl").setAttribute("aria-pressed", String(key === "own"));
+  try {
+    const img = await loadImage(src);
+    // Like ImageIO.scaleDown, but to 1200 px for the page (the app uses 1600).
+    const k = Math.min(1, 1200 / Math.max(img.naturalWidth, img.naturalHeight));
+    S.imgW = Math.round(img.naturalWidth * k); S.imgH = Math.round(img.naturalHeight * k);
+    if (k < 1 && key === "own") { const cc = document.createElement("canvas"); cc.width = S.imgW; cc.height = S.imgH; cc.getContext("2d").drawImage(img, 0, 0, S.imgW, S.imgH); S.img = cc; }
+    else S.img = img;
+    $("#pTitle").textContent = title;
+    newGame();
+  } catch (e) { $("#gridNote").textContent = "This picture could not be loaded."; }
+}
+$$("[data-pic]").forEach(b => b.addEventListener("click", () => { const p = PICS[b.dataset.pic]; setPicture(b.dataset.pic, p.src, p.title); }));
+$("#own").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (!f) return; const url = URL.createObjectURL(f); setPicture("own", url, f.name.replace(/\.[^.]+$/, "").slice(0, 40) || "Your photo"); });
+$$("[data-mode]").forEach(b => b.addEventListener("click", () => {
+  if (S.mode === b.dataset.mode) return;
+  S.mode = b.dataset.mode; setPressed("[data-mode]", x => x.dataset.mode === S.mode);
+  S.target = S.mode === "kids" ? (isMobile() ? 6 : 9) : (isMobile() ? 9 : 16);
+  if (S.mode === "kids" && S.pic === "castle") { const p = PICS.owl; setPicture("owl", p.src, p.title); }
+  else newGame();
+}));
+$("#ghost").addEventListener("input", e => { S.ghostAlpha = +e.target.value; request(); });
+const swBox = $("#swatches");
+TABLE_COLORS.forEach((col, i) => { const b = document.createElement("button"); b.type = "button"; b.className = "sw"; b.style.background = col; b.setAttribute("aria-label", `Table color ${i + 1}`); b.setAttribute("aria-pressed", String(i === 0)); b.addEventListener("click", () => { S.tableColor = i; setPressed(".sw", x => x === b); request(); drawTray(); }); swBox.appendChild(b); });
+$("#bHint").addEventListener("click", () => { if (!S.cut || S.completed || !S.loose.length) return; S.hint = S.loose[Math.floor(Math.random() * S.loose.length)]; S.hintT0 = performance.now(); request(); });
+$("#bSpread").addEventListener("click", () => { if (!S.cut || S.completed) return; spread(); request(); });
+$("#bSound").addEventListener("click", e => { S.sound = !S.sound; e.currentTarget.setAttribute("aria-pressed", String(S.sound)); $("#bSound .w").style.display = S.sound ? "" : "none"; });
+$("#dAgain").addEventListener("click", () => newGame());
+$("#dClose").addEventListener("click", () => $("#done").classList.remove("on"));
+
+/* ---------- tray sort mini demo ---------- */
+const tcv = $("#trayCv"), tctx = tcv.getContext("2d");
+const T = { slot: 0, cols: 0, pos: [], from: [], t0: 0 };
+function trayLayout(instant) {
+  if (!S.cut) return;
+  const w = tcv.parentElement.clientWidth; if (!w) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const n = S.tray.length, target = isMobile() ? 64 : 84;
+  const maxCols = Math.max(4, Math.floor(w / target)); T.cols = Math.min(maxCols, Math.ceil(n / Math.ceil(n / maxCols))); T.slot = Math.min(w / T.cols, target * 1.25);
+  const rows = Math.ceil(n / T.cols), h = Math.round(rows * T.slot);
+  tcv.style.height = h + "px"; tcv.width = Math.round(w * dpr); tcv.height = Math.round(h * dpr); T.dpr = dpr; T.w = w; T.h = h;
+  const next = []; S.tray.forEach((id, i) => { next[id] = [(i % T.cols) * T.slot, Math.floor(i / T.cols) * T.slot]; });
+  T.from = instant || !T.pos.length || reduced ? next : T.pos.map((p, id) => current(id) || next[id]);
+  T.to = next; T.t0 = performance.now(); T.pos = next;
+  request(); drawTray();
+}
+function current(id) { if (!T.from[id] || !T.to) return null; const k = easeOut(Math.min(1, (performance.now() - T.t0) / 420)); return [T.from[id][0] + (T.to[id][0] - T.from[id][0]) * k, T.from[id][1] + (T.to[id][1] - T.from[id][1]) * k]; }
+function trayAnim(now) { const on = T.t0 && now - T.t0 < 440; if (on) drawTray(); return on; }
+function drawTray() {
+  if (!S.cut || !T.to) return;
+  const g = tctx, c = S.cut;
+  g.setTransform(T.dpr, 0, 0, T.dpr, 0, 0);
+  g.fillStyle = TABLE_COLORS[S.tableColor]; g.fillRect(0, 0, T.w, T.h);
+  g.fillStyle = "rgba(0,0,0,0.3)"; g.fillRect(0, 0, T.w, T.h);
+  const sw = c.cellW + 2 * c.pad, shh = c.cellH + 2 * c.pad, s = T.slot * 0.9 / Math.max(sw, shh);
+  for (const id of S.tray) {
+    const p = current(id) || T.to[id];
+    const w = sw * s, h = shh * s, x = p[0] + (T.slot - w) / 2, y = p[1] + (T.slot - h) / 2;
+    if (S.pieces[id] && S.pieces[id].placed) g.globalAlpha = 0.28;
+    g.drawImage(S.sprites[id], x, y, w, h); g.globalAlpha = 1;
+  }
+}
+function hueKey(rgb) {
+  const [r, g, b] = rgb.map(v => v / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  const sat = mx === 0 ? 0 : d / mx, val = mx;
+  let h = 0;
+  if (d > 0) { if (mx === r) h = 60 * (((g - b) / d) % 6); else if (mx === g) h = 60 * ((b - r) / d + 2); else h = 60 * ((r - g) / d + 4); }
+  if (h < 0) h += 360;
+  return sat < 0.18 || val < 0.18 ? 400 + (1 - val) * 100 : h;
+}
+$$("[data-sort]").forEach(b => b.addEventListener("click", () => {
+  if (!S.cut) return;
+  const k = b.dataset.sort, c = S.cut;
+  if (k === "edges") S.tray = S.tray.map((id, i) => [id, i]).sort((a, z) => c.edgeRank(a[0]) - c.edgeRank(z[0]) || a[1] - z[1]).map(a => a[0]);
+  else if (k === "color") { if (!S.colors) return; S.tray = S.tray.map((id, i) => [id, i, hueKey(S.colors[id])]).sort((a, z) => a[2] - z[2] || a[1] - z[1]).map(a => a[0]); }
+  else shuffleArr(S.tray, Math.random);
+  $("#trayNote").textContent = k === "edges" ? "Corners first, then border pieces, then the middle." : k === "color" ? "Hues around the color wheel, then greys from light to dark." : "Shuffled.";
+  trayLayout(false);
+}));
+
+/* ---------- edge explorer ---------- */
+const ES = { seed: 5, flip: null, jitter: true, pts: true };
+function drawEdge() {
+  const svg = $("#edgeSvg"), x0 = 80, L = 400, cellH = 160, yE = 190, unit = Math.min(L, cellH);
+  const rnd = rng(ES.seed);
+  const p = edgePoints(rnd, x0, yE, 1, 0, L, unit, { noJitter: !ES.jitter, flip: ES.flip });
+  if (ES.flip == null) ES.flip = p.flip;
+  // the upper piece walks the edge backwards (PuzzleCut.backward), from p9 to p0
+  let upper = `M${x0} ${yE - cellH} L${x0 + L} ${yE - cellH} L${p[18]} ${p[19]}`;
+  for (let k = 0; k < 3; k++) { const q = 8 - k * 3; upper += ` C${p[2 * q]} ${p[2 * q + 1]} ${p[2 * q - 2]} ${p[2 * q - 1]} ${p[2 * q - 4]} ${p[2 * q - 3]}`; }
+  upper += " Z";
+  let lower = `M${p[0]} ${p[1]}`;
+  for (let k = 0; k < 3; k++) { const i = 2 + k * 6; lower += ` C${p[i]} ${p[i + 1]} ${p[i + 2]} ${p[i + 3]} ${p[i + 4]} ${p[i + 5]}`; }
+  lower += ` L${x0 + L} ${yE + cellH} L${x0} ${yE + cellH} Z`;
+  let s = `<defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" stroke-opacity=".12" stroke-width="3"/></pattern></defs>`;
+  s += `<path d="${upper}" fill="#4A55C8" fill-opacity=".86"/><path d="${lower}" fill="#C97A1E" fill-opacity=".86"/>`;
+  s += `<text x="${x0 + 14}" y="${yE - cellH + 26}" fill="#fff" font-family="Spline Sans Mono, monospace" font-size="13">upper piece: backward(edge)</text>`;
+  s += `<text x="${x0 + 14}" y="${yE + cellH - 14}" fill="#fff" font-family="Spline Sans Mono, monospace" font-size="13">lower piece: forward(edge)</text>`;
+  if (ES.pts) {
+    let kcx = 0, kcy = 0; for (let k = 2; k <= 7; k++) { kcx += p[2 * k] / 6; kcy += p[2 * k + 1] / 6; }
+    let poly = ""; for (let k = 0; k < 10; k++) poly += `${k ? "L" : "M"}${p[2 * k]} ${p[2 * k + 1]} `;
+    s += `<path d="${poly}" fill="none" stroke="#FFD54F" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+    for (let k = 0; k < 10; k++) {
+      if (k === 7) continue;
+      const anchor = k % 3 === 0;
+      s += `<circle cx="${p[2 * k]}" cy="${p[2 * k + 1]}" r="${anchor ? 6 : 4.5}" fill="${anchor ? "#FFD54F" : "#1B1C20"}" stroke="#FFD54F" stroke-width="2"/>`;
+      let lx, ly;
+      if (k <= 1 || k >= 8) { lx = p[2 * k] + (k === 0 ? -24 : k === 9 ? 10 : -8); ly = p[2 * k + 1] + (ES.flip > 0 ? -12 : 22); }
+      else { const vx = p[2 * k] - kcx, vy = p[2 * k + 1] - kcy, m = Math.hypot(vx, vy) || 1; lx = p[2 * k] + vx / m * 20 - 8; ly = p[2 * k + 1] + vy / m * 20 + 4; }
+      s += `<text x="${lx}" y="${ly}" fill="#FFE9A8" font-family="Spline Sans Mono, monospace" font-size="12" paint-order="stroke" stroke="#1B1C20" stroke-width="3">${k === 2 ? "p2 = p7" : "p" + k}</text>`;
+    }
+  }
+  s += `<line x1="${x0}" y1="${yE + cellH + 26}" x2="${x0 + L}" y2="${yE + cellH + 26}" stroke="currentColor" stroke-opacity=".5"/><text x="${x0 + L / 2}" y="${yE + cellH + 22}" text-anchor="middle" font-family="Spline Sans Mono, monospace" font-size="12" fill="currentColor" fill-opacity=".75">length = cellW = ${L} · unit = min(cellW, cellH) = ${unit}</text>`;
+  svg.style.color = getComputedStyle(document.body).color;
+  svg.innerHTML = s;
+  $("#eSeed").textContent = `seed ${ES.seed} · tab ${ES.flip > 0 ? "down" : "up"}`;
+  const body = $("#ptBody"); let rows = "";
+  for (let k = 0; k < 10; k++) rows += `<tr><td>p${k}</td><td>${(p.raw[2 * k] / L).toFixed(3)}</td><td>${(p.raw[2 * k + 1] * p.flip / unit).toFixed(3)}</td></tr>`;
+  body.innerHTML = rows;
+}
+$("#eNew").addEventListener("click", () => { ES.seed = (ES.seed * 48271 + 11) % 2147483647; ES.flip = null; drawEdge(); });
+$("#eFlip").addEventListener("click", () => { ES.flip = -(ES.flip || 1); drawEdge(); });
+$("#eJit").addEventListener("click", e => { ES.jitter = !ES.jitter; e.currentTarget.setAttribute("aria-pressed", String(ES.jitter)); drawEdge(); });
+$("#ePts").addEventListener("click", e => { ES.pts = !ES.pts; e.currentTarget.setAttribute("aria-pressed", String(ES.pts)); drawEdge(); });
+
+/* ---------- Kids words and speech ---------- */
+const WORDS = [
+  ["k_owl", "Owl", "An owl", "Un hibou"], ["k_frog", "Frog", "A frog", "Une grenouille"],
+  ["k_lo", "O · Orange", "O is for orange", "O, comme orange"], ["k_n3", "3 · Three", "Three", "Trois"],
+  ["k_rainbow", "Rainbow", "A rainbow", "Un arc-en-ciel"], ["k_space", "Space trip", "A rocket in space", "Une fusée dans l'espace"],
+  ["k_vehicles", "Car and bus", "A car and a bus", "Une voiture et un bus"], ["k_lt", "T · Tomato", "T is for tomato", "T, comme tomate"],
+];
+let lang = (navigator.language || "en").toLowerCase().startsWith("fr") ? "fr" : "en";
+const hasTTS = "speechSynthesis" in window;
+function speak(pair, cheer) {
+  if (!hasTTS || !S.sound && cheer) return;
+  let text = pair ? (lang === "fr" ? pair[1] : pair[0]) : null;
+  if (cheer) text = lang === "fr" ? (text ? `Bravo ! ${text} !` : "Bravo !") : (text ? `Well done! ${text}!` : "Well done!");
+  if (!text) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = lang === "fr" ? "fr-FR" : "en-US"; u.rate = 0.9; speechSynthesis.speak(u); } catch (e) {}
+}
+function renderWords() {
+  const box = $("#words"); box.innerHTML = "";
+  WORDS.forEach(([f, title, en, fr]) => {
+    const d = document.createElement("div"); d.className = "wordc";
+    d.innerHTML = `<img src="img/t_${f}.webp" alt="Kids puzzle picture: ${title}" width="480" height="360" loading="lazy"><div class="wb"><div class="wt"><b>${title}</b><span>${lang === "fr" ? fr : en}</span></div><button class="say" type="button" aria-label="Say “${lang === "fr" ? fr : en}”"${hasTTS ? "" : " disabled"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg></button></div>`;
+    d.querySelector(".say").addEventListener("click", () => speak([en, fr], false));
+    box.appendChild(d);
+  });
+  setPressed("[data-lang]", b => b.dataset.lang === lang);
+  $("#ttsNote").textContent = hasTTS ? "" : "This browser has no speech voice.";
+}
+$$("[data-lang]").forEach(b => b.addEventListener("click", () => { lang = b.dataset.lang; renderWords(); }));
+
+/* ---------- Kids lock: hold for 3 seconds (HomeScreen HOLD_MS = 3000) ---------- */
+const HOLD_MS = 3000, ring = $("#ring"), hold = $("#hold"), lockState = $("#lockState");
+let holdT0 = 0, holdRaf = 0, unlocked = false;
+function holdTick(now) {
+  const t = Math.min(1, (now - holdT0) / HOLD_MS);
+  ring.setAttribute("stroke-dashoffset", String(314.16 * (1 - t)));
+  if (t >= 1) { holdRaf = 0; holdT0 = 0; unlocked = true; lockState.textContent = "Unlocked: all puzzles and photos are shown"; hold.querySelector("span").textContent = "Open"; return; }
+  holdRaf = requestAnimationFrame(holdTick);
+}
+function holdStart(e) { if (e && e.preventDefault) e.preventDefault(); if (holdT0) return; if (unlocked) { unlocked = false; hold.querySelector("span").textContent = "Hold"; lockState.textContent = "Locked"; ring.setAttribute("stroke-dashoffset", "314.16"); return; } holdT0 = performance.now(); lockState.textContent = "Keep holding…"; holdRaf = requestAnimationFrame(holdTick); }
+function holdStop() { if (!holdT0) return; cancelAnimationFrame(holdRaf); holdT0 = 0; ring.setAttribute("stroke-dashoffset", "314.16"); lockState.textContent = "Locked: hold for the full 3 seconds"; }
+hold.addEventListener("pointerdown", holdStart);
+["pointerup", "pointerleave", "pointercancel"].forEach(n => hold.addEventListener(n, holdStop));
+hold.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !e.repeat) holdStart(e); else if (e.key === " " || e.key === "Enter") e.preventDefault(); });
+hold.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") holdStop(); });
+hold.addEventListener("click", e => e.preventDefault());
+hold.addEventListener("contextmenu", e => e.preventDefault());
+
+/* ---------- boot ---------- */
+let lastW = 0;
+function layout() {
+  const w = stage.clientWidth; if (w === lastW) return; lastW = w;
+  sizeCanvas(); drawCuts();
+  if (S.cut && !S.drag) fitContent();
+  trayLayout(true); request();
+}
+window.addEventListener("resize", layout);
+sizeCanvas(); drawCuts(); drawEdge(); renderWords();
+lastW = stage.clientWidth;
+setPicture("castle", PICS.castle.src, PICS.castle.title);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawCuts(); });
+})();
+</script>
+</body>
+</html>
