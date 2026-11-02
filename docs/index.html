@@ -85,6 +85,8 @@ p { margin: 0; max-width: 64ch }
 @media (max-width: 860px) { .tbtn { margin-left: auto } }
 .ghl { font-family: var(--mono); font-size: 12.5px; color: var(--ink); text-decoration: none; border: 1px solid var(--rule-ink); padding: 7px 11px; border-radius: 999px; white-space: nowrap }
 .ghl:hover { background: var(--ink); color: var(--table) }
+.ghl { display: inline-flex; align-items: center; gap: 6px }
+.ghl svg { width: 14px; height: 14px; flex: none }
 
 /* Buttons */
 .btn { display: inline-flex; align-items: center; gap: 10px; font: 600 16px/1 var(--body); padding: 15px 20px; border-radius: 999px; text-decoration: none; border: 1.5px solid var(--rule-ink); color: var(--ink); background: transparent; cursor: pointer }
@@ -300,7 +302,7 @@ footer .wrap { gap: 26px }
       <a href="#cut">The cut</a><a href="#table">On the table</a><a href="#kids">Kids</a><a href="#photos">Your photos</a><a href="#inside">Inside</a><a href="#install">Install</a>
     </nav>
     <button class="tbtn" id="theme" type="button" aria-label="Switch to dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
-    <a class="ghl" href="https://github.com/ouaazizdriss/puzzles">GitHub</a>
+    <a class="ghl" href="https://github.com/ouaazizdriss/puzzles" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
   </div>
 </header>
 
